@@ -1,0 +1,20 @@
+{
+    "folders": [
+        {
+            "path": ".",
+            "folder_exclude_patterns": [
+                ".vagrant",
+                "venv",
+                "build_dir",
+                "verilator_dir"
+            ],
+            "file_exclude_patterns": []
+        }
+    ],
+    "settings": {
+        "translate_tabs_to_spaces": true,
+        "AdvancedNewFile": {
+            "default_initial": "rtl/"
+        }
+    }
+}
