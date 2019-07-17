@@ -4,7 +4,9 @@
 module program_counter(
     input i_Clock,
     input i_Reset,
-    output [31:0] o_InstructionPointer);
+
+    output [31:0] o_InstructionPointer
+);
 
     logic [31:0] r_InstructionPointer;
 

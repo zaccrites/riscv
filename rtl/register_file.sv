@@ -5,8 +5,8 @@ module register_file(
     input [4:0] i_RegDest,
     input [4:0] i_RegSource1,
     input [4:0] i_RegSource2,
-
     input [31:0] i_DataIn,
+
     output [31:0] o_DataOut1,
     output [31:0] o_DataOut2
 );
@@ -14,12 +14,12 @@ module register_file(
     logic [31:0] r_Registers [31:1];
 
     always_ff @ (posedge i_Clock) begin
-        if (i_WriteEnable) begin
-
-        end
-        else begin
-
+        if (i_WriteEnable && i_RegDest != 5'b0) begin
+            r_Registers[i_RegDest] <= i_DataIn;
         end
     end
+
+    assign o_DataOut1 = r_Registers[i_RegSource1];
+    assign o_DataOut2 = r_Registers[i_RegSource2];
 
 endmodule

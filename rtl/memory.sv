@@ -7,7 +7,9 @@ module memory(
     input i_WriteEnable,
     input [31:0] i_Address,
     input [31:0], i_DataIn,
-    output [31:0], o_DataOut);
+
+    output [31:0], o_DataOut
+);
 
     // Only the lower 16 bits are considered for now
     logic [31:0] r_RAM [65535:0]
@@ -18,6 +20,8 @@ module memory(
             o_DataOut <= i_DataIn;
         end
         else begin
+            // TODO: Only trigger a cache miss if a ReadEnable
+            // input is asserted.
             o_DataOut <= r_RAM[i_Address[15:0]];
         end
     endmodule
