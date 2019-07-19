@@ -19,7 +19,7 @@ module register_file(
         end
     end
 
-    assign o_DataOut1 = r_Registers[i_RegSource1];
-    assign o_DataOut2 = r_Registers[i_RegSource2];
+    assign o_DataOut1 = (i_RegSource1 == 5'b0) ? 31'b0 : r_Registers[i_RegSource1];
+    assign o_DataOut2 = (i_RegSource2 == 5'b0) ? 31'b0 : r_Registers[i_RegSource2];
 
 endmodule

@@ -9,8 +9,7 @@ function(verilate_cmake)
     if (NOT EXISTS ${OUTPUT_CMAKE_FILE_PATH})
         execute_process(
             COMMAND
-                "/home/zac/venv/bin/python"
-                "${CMAKE_CURRENT_LIST_DIR}/verilate_cmake.py"
+                python "${CMAKE_CURRENT_LIST_DIR}/verilate_cmake.py"
                 "${CMAKE_SOURCE_DIR}/rtl/${VERILATE_CMAKE_VERILOG_MODULE}"
                 "-I${PROJECT_SOURCE_DIR}/rtl"
                 --verilator-output-dir "${CMAKE_CURRENT_BINARY_DIR}/verilator_output/V${VERILOG_MODULE_NAME}"
@@ -23,7 +22,7 @@ function(verilate_cmake)
 endfunction()
 
 
-# verilate_cmake(VERILOG_MODULE program_counter.sv)
-# verilate_cmake(VERILOG_MODULE alu.sv)
-
 verilate_cmake(VERILOG_MODULE memory.sv)
+verilate_cmake(VERILOG_MODULE instruction_decode.sv)
+verilate_cmake(VERILOG_MODULE alu.sv)
+verilate_cmake(VERILOG_MODULE program_counter.sv)

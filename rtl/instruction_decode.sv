@@ -10,34 +10,69 @@ module instruction_decode(
 
     input [31:0] i_InstructionWord,
 
-    output [6:0] o_Opcode,
     output [31:0] o_ImmediateData,
 
     output [4:0] o_rd,
     output [4:0] o_rs1,
     output [4:0] o_rs2,
 
-    // output [2:0] o_funct3,
-    // output [6:0] o_funct7
+    output o_Branch,
+    output o_Jump,
+    output o_RegWrite,
+    output o_MemWrite,
+    output o_MemRead,
+
+    output o_AluSource1,
+    output o_AluSource2,
+    output o_WritebackSource,
+
+    output [2:0] o_Funct,
+    output [2:0] o_AluOp,
+    output o_AluOpAlt,
 
     output o_IllegalInstruction
 
 );
-
-
-
-
-
-    logic [4:0] w_Shamt;
-    logic [6:0] w_Funct7;
     logic [2:0] w_Funct3;
     logic [4:0] w_rs2;
     logic [4:0] w_rs1;
     logic [4:0] w_rd;
-    logic [5:0] w_Opcode;
+    logic [4:0] w_Opcode;
     logic [1:0] w_OpcodeSuffix;
+
+    // TODO: FENCE instruction
+
+    logic w_Branch;
+    logic w_Jump;
+
+    logic w_RegWrite;
+
+    logic w_MemWrite;
+    logic w_MemRead;
+    // logic w_MemReadUnsigned;
+    // logic [1:0] w_MemAlignment;
+
+
+    logic w_AluSource1;
+    logic w_AluSource2;
+    logic [2:0] w_AluOp;
+    logic w_AluOpAlt;             // ADD/SUB, SRL/SRA, etc.
+
+
+    logic w_WritebackSource;
+
+
+    // TODO
+    logic [31:0] w_IType_Immediate;
+    logic [31:0] w_SType_Immediate;
+    logic [31:0] w_BType_Immediate;
+    logic [31:0] w_UType_Immediate;
+    logic [31:0] w_JType_Immediate;
+    logic [31:0] w_Immediate;
+
+    logic w_IllegalInstruction;
+
     always_comb begin
-        w_Funct7        = i_InstructionWord[31:25];
         w_rs2           = i_InstructionWord[24:20];
         w_rs1           = i_InstructionWord[19:15];
         w_Funct3        = i_InstructionWord[14:12];
@@ -45,99 +80,125 @@ module instruction_decode(
         w_Opcode        = i_InstructionWord[6:2];
         w_OpcodeSuffix  = i_InstructionWord[1:0];
 
-        w_Shamt = w_rs2;
+        // See RISC-V Unprivileged ISA Figure 2.4
+        w_IType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:20]};
+        w_SType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:25], i_InstructionWord[11:7]};
+        w_BType_Immediate = {{20{i_InstructionWord[31]}}, i_InstructionWord[7], i_InstructionWord[30:25], i_InstructionWord[11:8], 1'b0};
+        w_UType_Immediate = {i_InstructionWord[31:12], 12'b0};
+        w_JType_Immediate = {{12{i_InstructionWord[31]}}, i_InstructionWord[19:12], i_InstructionWord[20], i_InstructionWord[30:25], i_InstructionWord[24:21], 1'b0};
+
+        // Some of these can likely be set to don't-cares, but since the
+        // signals are all set via a LUT entry anyway then it probably
+        // doesn't cost anything extra to have them set to a specific value.
+        w_Jump = 0;
+        w_Branch = 0;
+        w_RegWrite = 1;
+        w_MemWrite = 0;
+        w_MemRead = 0;
+        w_AluSource1 = `ALUSRC1_RS1;
+        w_AluSource1 = `ALUSRC2_RS2;
+        w_AluOp = w_Funct3;
+        w_AluOpAlt = i_InstructionWord[30];
+        w_WritebackSource = `WBSRC_ALU;
+        w_Immediate = 32'x;
+
+        w_IllegalInstruction = (w_OpcodeSuffix != 2'b11);
+
+        case (w_Opcode)
+
+            `OPCODE_LOAD : begin
+                w_MemRead = 1;
+                w_AluOp = `ALUOP_ADD;
+                w_AluOpAlt = 0;
+                w_WritebackSource = `WBSRC_MEM;
+                w_Immediate = w_IType_Immediate;
+            end
+
+            `OPCODE_OP_IMM : begin
+                w_AluSource1 = `ALUSRC1_RS1;
+                w_AluSource2 = `ALUSRC2_IMM;
+                w_Immediate = w_IType_Immediate;
+            end
+
+            `OPCODE_AUIPC : begin
+                w_AluSource1 = `ALUSRC1_PC;
+                w_AluSource2 = `ALUSRC2_IMM;
+                w_Immediate = w_UType_Immediate;
+            end
+
+            `OPCODE_STORE : begin
+                w_RegWrite = 0;
+                w_MemWrite = 1;
+                w_AluOp = `ALUOP_ADD;
+                w_AluOpAlt = 0;
+                w_Immediate = w_SType_Immediate;
+            end
+
+            `OPCODE_OP : begin
+                // Use all defaults
+            end
+
+            `OPCODE_LUI : begin
+                w_AluSource2 = `ALUSRC2_IMM;
+                w_Immediate = w_UType_Immediate;
+            end
+
+            `OPCODE_BRANCH : begin
+                w_Branch = 1;
+                w_AluOp = `ALUOP_ADD;
+                w_AluOpAlt = 1;
+                w_Immediate = w_BType_Immediate;
+            end
+
+            `OPCODE_JALR : begin
+                w_Jump = 1;
+                w_RegWrite = 1;
+                w_AluOp = `ALUOP_ADD;
+                w_AluOpAlt = 0;
+                w_AluSource2 = `ALUSRC2_IMM;
+            end
+
+            `OPCODE_JAL : begin
+                w_Jump = 1;
+                w_RegWrite = 1;
+                w_AluOp = `ALUOP_ADD;
+                w_AluOpAlt = 0;
+                w_AluSource2 = `ALUSRC2_IMM;
+                w_Immediate = w_JType_Immediate;
+            end
+
+            default : begin
+                // Unimplemented or illegal instruction
+                w_IllegalInstruction = 1;
+            end
+
+        endcase
+
     end
 
 
-
-
-    // TODO: FENCE instruction
-
-    logic w_AluOP;
-    logic w_AUIPC
-    logic w_Branch;
-    logic w_JAL;
-    logic w_JALR;
-    logic w_LUI;
-    logic w_STORE;
-    logic w_LOAD;
-
-    // TODO: Other SYSTEM instructions
-    logic w_SYSTEM;
-    logic w_SYSTEM_EBREAK;
-
-    logic w_MemRead;
-    logic w_MemWrite;
-    logic [1:0] w_MemAlignment;
-    logic w_MemReadUnsigned;
-
-    logic w_RegWrite;
-
-    logic w_AluSource1;
-    logic w_AluSource2;
-
-    logic w_IllegalInstruction;
-    always_comb begin
-
-
-        w_MemReadUnsigned = w_Funct3[2];
-        w_MemAlignment = w_Funct3[1:0];
-
-
-
-        if (w_Opcode == OPCODE_OP) begin
-            // Use Funct7/shamt
-        end
-        else if (w_Opcode == OPCODE_OP_IMM) begin
-            // Use Funct3
-        end
-        else begin
-            // ???
-        end
-
-        w_AUIPC = w_Opcode == OPCODE_AUIPC;
-        w_JAL = w_Opcode == OPCODE_JAL;
-        w_JALR = w_Opcode == OPCODE_JALR;
-        w_LUI = w_Opcode == OPCODE_LUI;
-
-        w_LOAD = w_Opcode ==
-
-        w_SYSTEM = w_Opcode == OPCODE_SYSTEM;
-        w_SYSTEM_EBREAK = w_Opcode[20];
-
-        w_IllegalInstruction = (w_OpcodeSuffix != 2'b11) || w_Opcode inside {
-            // Used for RV64
-            OPCODE_OP_32, OPCODE_OP_IMM_32,
-            // Used for Extension "A"
-            OPCODE_AMO,
-            // Used for Extension "F"
-            OPCODE_LOAD_FP, OPCODE_STORE_FP, OPCODE_OP_FP,
-            OPCODE_MADD, OPCODE_MSUB, OPCODE_NMADD, OPCODE_NMSUB,
-            // Unused custom opcodes
-            OPCODE_CUSTOM_0, OPCODE_CUSTOM_1, OPCODE_CUSTOM_2, OPCODE_CUSTOM_3,
-            // Reserved opcodes
-            OPCODE_RESERVED_0, OPCODE_RESERVED_1, OPCODE_RESERVED_2
-        };
-
-
-        // Set control signal outputs
-        w_MemWrite = w_STORE;
-        w_MemRead = w_LOAD;
-
-
-        // TODO: Use decoded opcode to determine which immediate format to use
-        // The immediate bits are different depending on instruction type.
-
-
-
-    end
-
-
+    assign o_AluOpAlt = w_AluOpAlt;
 
     assign o_IllegalInstruction = w_IllegalInstruction;
     assign o_rs2 = w_rs2;
     assign o_rs1 = w_rs1;
     assign o_rd = w_rd;
+
+    assign o_AluOp = w_AluOp;
+    assign o_Funct = w_Funct3;
+
+    assign o_ImmediateData = w_Immediate;
+
+    assign o_Branch = w_Branch;
+    assign o_Jump = w_Jump;
+    assign o_RegWrite = w_RegWrite;
+    assign o_MemWrite = w_MemWrite;
+    assign o_MemRead = w_MemRead;
+
+    assign o_AluSource1 = w_AluSource1;
+    assign o_AluSource2 = w_AluSource2;
+    assign o_WritebackSource = w_WritebackSource;
+
 
 
 endmodule

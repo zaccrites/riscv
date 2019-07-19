@@ -3,7 +3,6 @@
         {
             "path": ".",
             "folder_exclude_patterns": [
-                ".vagrant",
                 "venv",
                 "build_dir",
                 "verilator_dir"

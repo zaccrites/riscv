@@ -43,7 +43,7 @@ add_custom_command(
         "{{ filename }}"
         {% endfor %}
     COMMAND
-        "/home/vagrant/venv/bin/python"
+        python
         "{{ __file__ }}"
         "{{ verilog_module_path }}"
         {% for include_path in verilog_include_paths -%}

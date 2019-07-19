@@ -43,9 +43,7 @@ module cpu(
 
 
 
-    instruction_decode decode(
 
-    );
 
 
 
@@ -86,7 +84,9 @@ module cpu(
 
 
 
-    logic [4:0] w_AluOp;
+    logic [2:0] w_AluOp;
+    logic w_AluOpAlt;
+
     logic [31:0] w_AluSource1;
     logic [31:0] w_AluSource2;
     logic [31:0] w_AluOutput;
@@ -105,7 +105,23 @@ module cpu(
     );
 
 
+    instruction_decode decode(
+        .i_InstructionWord   (i_InstructionWord),
 
+        .o_AluOpAlt           (w_AluOp),
+        .o_AluOpAlt           (w_AluOpAlt)
+        .o_rd                 (w_rd),
+        .o_rs1                (w_rs1),
+        .o_rs2                (w_rs2),
+        .o_Funct              (w_Funct),
+        .o_ImmediateData      (w_ImmediateData),
+        .o_IllegalInstruction (w_IllegalInstruction),
+
+        .o_AluSource1(w_AluSource1)
+        // TODO: More
+
+
+    );
 
 
 
