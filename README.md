@@ -21,9 +21,14 @@ Then run these commands to set up the CMake build:
     pip install -r requirements.txt
     cmake -B ../riscv-build -G Ninja
 
-Then start the build:
+Then build the projects and run tests:
 
     ninja -C ../riscv-build
+    ../riscv-build/tests/unit_tests
+
+To run the simulator:
+
+    TODO
 
 
 ## Vivado
