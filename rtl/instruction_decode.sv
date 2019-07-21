@@ -92,7 +92,7 @@ module instruction_decode(
         // doesn't cost anything extra to have them set to a specific value.
         w_Jump = 0;
         w_Branch = 0;
-        w_RegWrite = 1;
+        w_RegWrite = 0;
         w_MemWrite = 0;
         w_MemRead = 0;
         w_AluSource1 = `ALUSRC1_RS1;
@@ -107,6 +107,7 @@ module instruction_decode(
         case (w_Opcode)
 
             `OPCODE_LOAD : begin
+                w_RegWrite = 1;
                 w_MemRead = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
@@ -115,19 +116,26 @@ module instruction_decode(
             end
 
             `OPCODE_OP_IMM : begin
+                w_RegWrite = 1;
                 w_AluSource1 = `ALUSRC1_RS1;
                 w_AluSource2 = `ALUSRC2_IMM;
                 w_Immediate = w_IType_Immediate;
+
+                // The only OP_IMM instruction for which this
+                // applies is SRAI. This will cause problems for
+                // e.g. ADDI, where with an immediate with the right
+                // bit set will subtract instead of add.
+                w_AluOpAlt = w_AluOpAlt && (w_AluOp == `ALUOP_SRL);
             end
 
             `OPCODE_AUIPC : begin
+                w_RegWrite = 1;
                 w_AluSource1 = `ALUSRC1_PC;
                 w_AluSource2 = `ALUSRC2_IMM;
                 w_Immediate = w_UType_Immediate;
             end
 
             `OPCODE_STORE : begin
-                w_RegWrite = 0;
                 w_MemWrite = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
@@ -135,10 +143,11 @@ module instruction_decode(
             end
 
             `OPCODE_OP : begin
-                // Use all defaults
+                w_RegWrite = 1;
             end
 
             `OPCODE_LUI : begin
+                w_RegWrite = 1;
                 w_AluSource2 = `ALUSRC2_IMM;
                 w_Immediate = w_UType_Immediate;
             end
@@ -156,6 +165,7 @@ module instruction_decode(
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
                 w_AluSource2 = `ALUSRC2_IMM;
+                w_Immediate = w_IType_Immediate;
             end
 
             `OPCODE_JAL : begin

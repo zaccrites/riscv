@@ -7,6 +7,8 @@
 TEST(Memory, main)
 {
     Vmemory dut;
+    dut.i_Clock = 0;
+    dut.eval();
 
     for (uint32_t address = 0; address < 1024; address++) {
         dut.i_Address = address;
@@ -15,12 +17,12 @@ TEST(Memory, main)
         dut.i_WriteEnable = 1;
         dut.i_DataIn = value;
         TICK;
-        EXPECT_EQ(dut.o_DataOut, value);
+        EXPECT_EQ_HEX(dut.o_DataOut, value) << address;
 
         dut.i_WriteEnable = 0;
         dut.i_DataIn = 0xdeadbeef;
         TICK;
-        EXPECT_EQ(dut.o_DataOut, value);
+        EXPECT_EQ_HEX(dut.o_DataOut, value) << address;
 
     }
 

@@ -13,6 +13,7 @@ module register_file(
 
     logic [31:0] r_Registers [31:1];
 
+    // TODO: Make sure the Xilinx tools infer a RAM with WRITE_FIRST
     always_ff @ (posedge i_Clock) begin
         if (i_WriteEnable && i_RegDest != 5'b0) begin
             r_Registers[i_RegDest] <= i_DataIn;

@@ -20,7 +20,7 @@ static std::string MakeHexCompareMessage(const char* header, const char* expecte
     if (expectedStr != expectedExpr) {
         message << "    Which is: " << expectedStr << "\n";
     }
-    message << "  " << actualStr << "\n";
+    message << "  " << actualExpr << "\n";
     if (actualStr != actualExpr) {
         message << "    Which is: " << actualStr << "\n";
     }
