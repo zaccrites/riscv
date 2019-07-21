@@ -1,12 +1,12 @@
 
 add_executable(unit_tests
-    "unit_tests/alu_test.cpp"
-    "unit_tests/instruction_decode_test.cpp"
-    "unit_tests/program_counter_test.cpp"
-    "unit_tests/register_file_test.cpp"
-    "unit_tests/memory_test.cpp"
+    alu_test.cpp
+    instruction_decode_test.cpp
+    program_counter_test.cpp
+    register_file_test.cpp
+    memory_test.cpp
 
-    "unit_tests/test_helper.cpp"
+    test_helper.cpp
 )
 
 target_link_libraries(unit_tests
