@@ -15,4 +15,16 @@ testing::AssertionResult CompareHexNe(const char* expectedExpr, const char* actu
 #define ASSERT_NE_HEX(expected, actual)  ASSERT_PRED_FORMAT2(CompareHexNe, expected, actual)
 
 
+#define TICK \
+    dut.i_Clock = 1; \
+    dut.eval(); \
+    dut.i_Clock = 0; \
+    dut.eval();
+
+#define RESET \
+    dut.i_Reset = 1; \
+    TICK; \
+    dut.i_Reset = 0;
+
+
 #endif

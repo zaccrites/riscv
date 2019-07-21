@@ -1,55 +1,58 @@
 
+// TODO: Find a way to test this that isn't just repeating the
+// Verilog code in C++
+
 #include <gtest/gtest.h>
 #include "test_helper.hpp"
 #include "Vinstruction_decode.h"
 
 
-TEST(InstructionDecode, TestLoad)
-{
+// TEST(InstructionDecode, TestLoad)
+// {
 
-}
-
-
-TEST(InstructionDecode, TestOpImm)
-{
-
-}
+// }
 
 
-TEST(InstructionDecode, TestAUIPC)
-{
+// TEST(InstructionDecode, TestOpImm)
+// {
 
-}
-
-
-TEST(InstructionDecode, TestStore)
-{
-
-}
+// }
 
 
-TEST(InstructionDecode, TestOp)
-{
+// TEST(InstructionDecode, TestAUIPC)
+// {
 
-}
-
-
-TEST(InstructionDecode, TestLUI)
-{
-
-}
+// }
 
 
-TEST(InstructionDecode, TestBranch)
-{
+// TEST(InstructionDecode, TestStore)
+// {
 
-}
+// }
 
 
-TEST(InstructionDecode, TestJALR)
-{
+// TEST(InstructionDecode, TestOp)
+// {
 
-}
+// }
+
+
+// TEST(InstructionDecode, TestLUI)
+// {
+
+// }
+
+
+// TEST(InstructionDecode, TestBranch)
+// {
+
+// }
+
+
+// TEST(InstructionDecode, TestJALR)
+// {
+
+// }
 
 
 TEST(InstructionDecode, TestJAL)
