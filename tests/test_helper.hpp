@@ -8,22 +8,18 @@
 
 // https://groups.google.com/forum/#!topic/googletestframework/V_Rek4n8wYE
 
-testing::AssertionResult CompareAndOutputHex(const char* expectedExpr, const char* actualExpr, uint32_t expected, uint32_t actual)
+std::string MakeHexCompareMessage(const char* header, const char* expectedExpr, const char* actualExpr, uint32_t expected, uint32_t actual)
 {
-    if (expected == actual) {
-        return testing::AssertionSuccess();
-    }
-
     std::stringstream ss;
     ss.str("");
     ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << expected;
-    std::string expectedStr = ss.str();
+    auto expectedStr = ss.str();
     ss.str("");
     ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << actual;
-    std::string actualStr = ss.str();
+    auto actualStr = ss.str();
 
     std::stringstream message;
-    message << "Expected equality of these values:\n";
+    message << header << "\n";
     message << "  " << expectedExpr << "\n";
     if (expectedStr != expectedExpr) {
         message << "    Which is: " << expectedStr << "\n";
@@ -32,13 +28,41 @@ testing::AssertionResult CompareAndOutputHex(const char* expectedExpr, const cha
     if (actualStr != actualExpr) {
         message << "    Which is: " << actualStr << "\n";
     }
-
-    return testing::AssertionFailure() << message.str();
+    return message.str();
 }
 
+testing::AssertionResult CompareHexEq(const char* expectedExpr, const char* actualExpr, uint32_t expected, uint32_t actual)
+{
+    if (expected == actual) {
+        return testing::AssertionSuccess();
+    }
 
-#define EXPECT_EQ_HEX(expected, actual)  \
-    EXPECT_PRED_FORMAT2(CompareAndOutputHex, expected, actual)
+    auto message = MakeHexCompareMessage(
+        "Expected equality of these values:",
+        expectedExpr, actualExpr,
+        expected, actual
+    );
+    return testing::AssertionFailure() << message;
+}
+
+testing::AssertionResult CompareHexNe(const char* expectedExpr, const char* actualExpr, uint32_t expected, uint32_t actual)
+{
+    if (expected != actual) {
+        return testing::AssertionSuccess();
+    }
+
+    auto message = MakeHexCompareMessage(
+        "Expected inequality of these values:",
+        expectedExpr, actualExpr,
+        expected, actual
+    );
+    return testing::AssertionFailure() << message;
+}
+
+#define EXPECT_EQ_HEX(expected, actual)  EXPECT_PRED_FORMAT2(CompareHexEq, expected, actual)
+#define EXPECT_NE_HEX(expected, actual)  EXPECT_PRED_FORMAT2(CompareHexNe, expected, actual)
+#define ASSERT_EQ_HEX(expected, actual)  ASSERT_PRED_FORMAT2(CompareHexEq, expected, actual)
+#define ASSERT_NE_HEX(expected, actual)  ASSERT_PRED_FORMAT2(CompareHexNe, expected, actual)
 
 
 #endif
