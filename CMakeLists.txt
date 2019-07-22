@@ -11,5 +11,6 @@ include(googletest)
 
 
 add_subdirectory(Vmodules)
+add_subdirectory(simulator)
 add_subdirectory(tests)
 

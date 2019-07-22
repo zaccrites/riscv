@@ -22,6 +22,8 @@ function(verilate_cmake)
 endfunction()
 
 
+verilate_cmake(VERILOG_MODULE cpu.sv)
+
 verilate_cmake(VERILOG_MODULE alu.sv)
 verilate_cmake(VERILOG_MODULE program_counter.sv)
 verilate_cmake(VERILOG_MODULE instruction_decode.sv)

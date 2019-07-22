@@ -39,8 +39,9 @@ module program_counter(
         else begin
             if (i_Jump || w_DoBranch)
                 r_InstructionPointer <= i_BranchAddress;
-            else
+            else begin
                 r_InstructionPointer <= r_InstructionPointer + 4;
+            end
         end
     end
 

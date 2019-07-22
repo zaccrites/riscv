@@ -37,8 +37,9 @@
 `define ALUSRC1_RS1     0
 `define ALUSRC1_PC      1
 
-`define ALUSRC2_RS2     0
-`define ALUSRC2_IMM     1
+`define ALUSRC2_RS2      2'b00
+`define ALUSRC2_IMM      2'b01
+`define ALUSRC2_CONST_4  2'b10
 
 
 `define WBSRC_ALU   0

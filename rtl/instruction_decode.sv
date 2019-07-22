@@ -5,30 +5,30 @@
 `include "cpudefs.sv"
 
 
+// TODO: This needs better tests.
+
 
 module instruction_decode(
-
     input [31:0] i_InstructionWord,
 
     output [31:0] o_ImmediateData,
-
     output [4:0] o_rd,
     output [4:0] o_rs1,
     output [4:0] o_rs2,
-
     output o_Branch,
     output o_Jump,
     output o_RegWrite,
     output o_MemWrite,
     output o_MemRead,
-
     output o_AluSource1,
-    output o_AluSource2,
+    output [1:0] o_AluSource2,
     output o_WritebackSource,
-
     output [2:0] o_Funct,
     output [2:0] o_AluOp,
     output o_AluOpAlt,
+
+    // TODO: Better way to output this?
+    output o_JALR,
 
     output o_IllegalInstruction
 
@@ -54,15 +54,13 @@ module instruction_decode(
 
 
     logic w_AluSource1;
-    logic w_AluSource2;
+    logic [1:0] w_AluSource2;
     logic [2:0] w_AluOp;
     logic w_AluOpAlt;             // ADD/SUB, SRL/SRA, etc.
 
 
     logic w_WritebackSource;
 
-
-    // TODO
     logic [31:0] w_IType_Immediate;
     logic [31:0] w_SType_Immediate;
     logic [31:0] w_BType_Immediate;
@@ -71,6 +69,8 @@ module instruction_decode(
     logic [31:0] w_Immediate;
 
     logic w_IllegalInstruction;
+
+    logic w_JALR;
 
     always_comb begin
         w_rs2           = i_InstructionWord[24:20];
@@ -96,12 +96,12 @@ module instruction_decode(
         w_MemWrite = 0;
         w_MemRead = 0;
         w_AluSource1 = `ALUSRC1_RS1;
-        w_AluSource1 = `ALUSRC2_RS2;
+        w_AluSource2 = `ALUSRC2_RS2;
         w_AluOp = w_Funct3;
         w_AluOpAlt = i_InstructionWord[30];
         w_WritebackSource = `WBSRC_ALU;
         w_Immediate = 32'x;
-
+        w_JALR = 0;
         w_IllegalInstruction = (w_OpcodeSuffix != 2'b11);
 
         case (w_Opcode)
@@ -164,8 +164,10 @@ module instruction_decode(
                 w_RegWrite = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
-                w_AluSource2 = `ALUSRC2_IMM;
+                w_AluSource1 = `ALUSRC1_PC;
+                w_AluSource2 = `ALUSRC2_CONST_4;
                 w_Immediate = w_IType_Immediate;
+                w_JALR = 1;
             end
 
             `OPCODE_JAL : begin
@@ -173,12 +175,27 @@ module instruction_decode(
                 w_RegWrite = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
-                w_AluSource2 = `ALUSRC2_IMM;
+                w_AluSource1 = `ALUSRC1_PC;
+                w_AluSource2 = `ALUSRC2_CONST_4;
                 w_Immediate = w_JType_Immediate;
+            end
+
+            `OPCODE_SYSTEM : begin
+                // TODO: Implement and add test for ECALL, EBREAK, and CSR instructions
+                //
+                // These are just dummy parameters to get some data out
+                // of the simulator to the C++ environment (what could be
+                // called an AEE, I guess).
+                w_RegWrite = 0;
+                w_MemWrite = 0;
+
+                // $display("System! word=%08x", i_InstructionWord);
+                w_IllegalInstruction = 1;
             end
 
             default : begin
                 // Unimplemented or illegal instruction
+                $display("Unimplemented! word=%08x", i_InstructionWord);
                 w_IllegalInstruction = 1;
             end
 
@@ -209,6 +226,6 @@ module instruction_decode(
     assign o_AluSource2 = w_AluSource2;
     assign o_WritebackSource = w_WritebackSource;
 
-
+    assign o_JALR = w_JALR;
 
 endmodule
