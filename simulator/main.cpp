@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 
 
     // https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
-    std::ifstream fs {"/home/zac/riscv/programs/test_samples/simulator_test2.bin", std::ios::binary};  // TODO: cmd line args
+    std::ifstream fs {"/home/zac/riscv/programs/test_samples/factorial.bin", std::ios::binary};  // TODO: cmd line args
     // std::istream_iterator<uint32_t> start { fs };
     // std::vector<uint32_t> programInstructions { start, {} };
     std::vector<uint32_t> programInstructions;
@@ -119,11 +119,11 @@ int main(int argc, char** argv)
     {
         //
 
-        uint32_t address = cpu.o_InstructionPointer;
-        if (address > 30 * 4) {
-            std::cerr << "Got to address " << std::hex << address << ", aborting" << std::endl;
-            break;
-        }
+        // uint32_t address = cpu.o_InstructionPointer;
+        // if (address > 30 * 4) {
+        //     std::cerr << "Got to address " << std::hex << address << ", aborting" << std::endl;
+        //     break;
+        // }
 
         TICK;
 

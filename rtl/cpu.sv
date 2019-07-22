@@ -155,7 +155,7 @@ module cpu(
     end
 
     always @ (negedge i_Clock) begin
-        // $display("Executed instruction word %08x at address %08x", w_InstructionWord, w_InstructionPointer);
+        $display("Executed instruction word %08x at address %08x", w_InstructionWord, w_InstructionPointer);
     end
 
 endmodule
