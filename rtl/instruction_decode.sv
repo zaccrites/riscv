@@ -111,6 +111,7 @@ module instruction_decode(
                 w_MemRead = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
+                w_AluSource2 = `ALUSRC2_IMM;
                 w_WritebackSource = `WBSRC_MEM;
                 w_Immediate = w_IType_Immediate;
             end
@@ -139,6 +140,7 @@ module instruction_decode(
                 w_MemWrite = 1;
                 w_AluOp = `ALUOP_ADD;
                 w_AluOpAlt = 0;
+                w_AluSource2 = `ALUSRC2_IMM;
                 w_Immediate = w_SType_Immediate;
             end
 
