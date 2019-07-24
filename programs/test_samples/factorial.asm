@@ -4,7 +4,9 @@
 
 # https://github.com/riscv/riscv-asm-manual/blob/master/riscv-asm.md
 
+
 .text
+.global _start
 _start:
     jal main
 
@@ -54,16 +56,16 @@ main:
 #
 # Probably not optimal assembly.
 multiply:
-    beqz a0, .return
-    beqz a1, .retzero
+    beqz a0, 3f
+    beqz a1, 2f
     mv t0, a0  # increment to add by
     li t1, 1
-.looptop:
-    beq a1, t1, .return
+1:
+    beq a1, t1, 3f
     add a0, t0, a0
     addi a1, a1, -1
-    j .looptop
-.retzero:
+    j 1b
+2:
     li a0, 0
-.return:
+3:
     jr ra
