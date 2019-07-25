@@ -7,6 +7,7 @@
 #include <iomanip>   // std::setw
 #include <fstream>
 #include <vector>
+#include <random>
 
 #include <algorithm>
 #include <iterator>
@@ -73,14 +74,24 @@ int main(int argc, char** argv)
 
 
     // https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
-    std::ifstream fs {"/home/zac/riscv/programs/test_samples/factorial.bin", std::ios::binary};  // TODO: cmd line args
+    std::ifstream fs {"/home/zac/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
     // std::istream_iterator<uint32_t> start { fs };
     // std::vector<uint32_t> programInstructions { start, {} };
-    std::vector<uint32_t> programInstructions;
     if (fs.is_open())
     {
+        // Randomize data memory before start.
+        // TODO: Randomize unassigned instruction memory too
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<uint32_t> dist(0, 0xffffffff);
+        for (size_t address = 0; address < 8096; address++)
+        {
+            cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address] = dist(rng);
+        }
+
         // I understand this is not idiomatic C++, but the "right"
         // answer isn't working for me at all.
+        size_t address = 0;
         while (true)
         {
             // I'll need to repeat this for .data segments as well.
@@ -88,30 +99,35 @@ int main(int argc, char** argv)
             // keep track of the "address" and start pushing to data
             // memory instead. The linker script can relocate
             // .data to the appropriate place.
-            uint32_t instructionWord;
-            fs.read(reinterpret_cast<char*>(&instructionWord), sizeof(instructionWord));
+            uint32_t word;
+            fs.read(reinterpret_cast<char*>(&word), sizeof(word));
 
-            if (fs.eof()) break;
-            programInstructions.push_back(instructionWord);
+            if (fs.eof())
+            {
+                break;
+            }
+
+            if (address < 8096)
+            {
+                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address] = word;
+            }
+            else
+            {
+                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 8096] = word;
+            }
+
+            address += 1;
         }
+        std::cout << "Read " << (address + 1) << " instructions from binary file." << std::endl;
+
     }
     else
     {
         std::cerr << "Failed to open file!" << std::endl;
         return 1;
     }
-    std::cout << "Read " << programInstructions.size() << " instructions from binary file." << std::endl;
-    std::copy(std::begin(programInstructions), std::end(programInstructions), std::begin(cpu.cpu__DOT__instruction_memory__DOT__r_RAM));
 
-    for (uint32_t i = 0; i < programInstructions.size() + 4; i++) {
-        std::stringstream ss;
-        ss << std::hex << std::setfill('0') <<
-            "program_memory[" << std::setw(2) << i*4 << "h] = " <<
-            "0x" << std::setw(8) << cpu.cpu__DOT__instruction_memory__DOT__r_RAM[i] << std::endl;
-        std::cout << ss.str();
-    }
 
-    // return 0;
 
 
     bool programRunning = true;
@@ -140,38 +156,38 @@ int main(int argc, char** argv)
                 //
                 // TODO: Use EBREAK instruction for this
                 std::cout << "Registers:\n" <<
-                    // "  x0  (zero) = 0x" << std::hex << std::setfill('0') << std::setw(8) << 0 << "\n"
+                    "  x0  (zero) = 0x" << std::hex << std::setfill('0') << std::setw(8) << 0 << "\n"
                     "  x1  (ra  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[0] << "\n"
-                    // "  x2  (sp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[1] << "\n"
-                    // "  x3  (gp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[2] << "\n"
-                    // "  x4  (tp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[3] << "\n"
-                    // "  x5  (t0  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[4] << "\n"
-                    // "  x6  (t1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[5] << "\n"
-                    // "  x7  (t2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[6] << "\n"
+                    "  x2  (sp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[1] << "\n"
+                    "  x3  (gp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[2] << "\n"
+                    "  x4  (tp  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[3] << "\n"
+                    "  x5  (t0  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[4] << "\n"
+                    "  x6  (t1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[5] << "\n"
+                    "  x7  (t2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[6] << "\n"
                     "  x8  (s0  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[7] << "\n"
-                    // "  x9  (s1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[8] << "\n"
+                    "  x9  (s1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[8] << "\n"
                     "  x10 (a0  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[9] << "\n"
-                    // "  x11 (a1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[10] << "\n"
-                    // "  x12 (a2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[11] << "\n"
-                    // "  x13 (a3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[12] << "\n"
-                    // "  x14 (a4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[13] << "\n"
-                    // "  x15 (a5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[14] << "\n"
-                    // "  x16 (a6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[15] << "\n"
-                    // "  x17 (a7  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[16] << "\n"
-                    // "  x18 (s2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[17] << "\n"
-                    // "  x19 (s3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[18] << "\n"
-                    // "  x20 (s4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[19] << "\n"
-                    // "  x21 (s5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[20] << "\n"
-                    // "  x22 (s6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[21] << "\n"
-                    // "  x23 (s7  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[22] << "\n"
-                    // "  x24 (s8  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[23] << "\n"
-                    // "  x25 (s9  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[24] << "\n"
-                    // "  x26 (s10 ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[25] << "\n"
-                    // "  x27 (s11 ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[26] << "\n"
-                    // "  x28 (t3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[27] << "\n"
-                    // "  x29 (t4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[28] << "\n"
-                    // "  x30 (t5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[29] << "\n"
-                    // "  x31 (t6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[30] << "\n"
+                    "  x11 (a1  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[10] << "\n"
+                    "  x12 (a2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[11] << "\n"
+                    "  x13 (a3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[12] << "\n"
+                    "  x14 (a4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[13] << "\n"
+                    "  x15 (a5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[14] << "\n"
+                    "  x16 (a6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[15] << "\n"
+                    "  x17 (a7  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[16] << "\n"
+                    "  x18 (s2  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[17] << "\n"
+                    "  x19 (s3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[18] << "\n"
+                    "  x20 (s4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[19] << "\n"
+                    "  x21 (s5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[20] << "\n"
+                    "  x22 (s6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[21] << "\n"
+                    "  x23 (s7  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[22] << "\n"
+                    "  x24 (s8  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[23] << "\n"
+                    "  x25 (s9  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[24] << "\n"
+                    "  x26 (s10 ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[25] << "\n"
+                    "  x27 (s11 ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[26] << "\n"
+                    "  x28 (t3  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[27] << "\n"
+                    "  x29 (t4  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[28] << "\n"
+                    "  x30 (t5  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[29] << "\n"
+                    "  x31 (t6  ) = 0x" << std::hex << std::setfill('0') << std::setw(8) << cpu.cpu__DOT__registers__DOT__r_Registers[30] << "\n"
                     << std::endl;
                 break;
 
@@ -184,6 +200,23 @@ int main(int argc, char** argv)
             case 2:
                 // syscall 2: end the program
                 programRunning = false;
+                break;
+
+            case 3:
+            {
+                // // syscall 3: print a string
+                // char buffer[512];
+                // uint32_t address = cpu.cpu__DOT__registers__DOT__r_Registers[10];
+                // strncpy(buffer, &cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 64*1024*1024], sizeof(buffer)-1);
+                // buffer[511] = '\0';
+                // std::cout << buffer << std::endl;
+
+                std::cout << "TODO: Allow printing string via syscall" << std::endl;
+            }
+            break;
+
+            default:
+                std::cout << "Unknown syscall number " << std::dec << syscallNumber << std::endl;
                 break;
 
             }

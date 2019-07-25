@@ -20,7 +20,7 @@ module instruction_decode(
     output o_RegWrite,
     output o_MemWrite,
     output o_MemRead,
-    output o_AluSource1,
+    output [1:0] o_AluSource1,
     output [1:0] o_AluSource2,
     output o_WritebackSource,
     output [2:0] o_Funct,
@@ -53,7 +53,7 @@ module instruction_decode(
     // logic [1:0] w_MemAlignment;
 
 
-    logic w_AluSource1;
+    logic [1:0] w_AluSource1;
     logic [1:0] w_AluSource2;
     logic [2:0] w_AluOp;
     logic w_AluOpAlt;             // ADD/SUB, SRL/SRA, etc.
@@ -150,6 +150,7 @@ module instruction_decode(
 
             `OPCODE_LUI : begin
                 w_RegWrite = 1;
+                w_AluSource1 = `ALUSRC1_CONST_0;
                 w_AluSource2 = `ALUSRC2_IMM;
                 w_Immediate = w_UType_Immediate;
             end

@@ -26,7 +26,7 @@ module cpu(
     logic w_RegWrite;
     logic w_MemWrite;
     logic w_MemRead;
-    logic w_AluSource1;
+    logic [1:0] w_AluSource1;
     logic [1:0] w_AluSource2;
     logic w_WritebackSource;
     logic [2:0] w_Funct;
@@ -65,6 +65,7 @@ module cpu(
 
     memory instruction_memory (
         .i_Clock                  (i_Clock),
+        .i_ReadEnable             (1),
         .i_WriteEnable            (0),
         .i_Address                (w_InstructionPointer),
         .i_DataIn                 (32'b0),
@@ -118,6 +119,7 @@ module cpu(
     memory data_memory (
         .i_Clock                  (i_Clock),
         .i_Address                (w_AluOutput),
+        .i_ReadEnable             (w_MemRead),
         .i_WriteEnable            (w_MemWrite),
         .i_DataIn                 (w_rs2Value),
         .o_DataOut                (w_MemValue)
@@ -131,8 +133,10 @@ module cpu(
         endcase
 
         case (w_AluSource1)
-            `ALUSRC1_RS1 : w_AluInput1 = w_rs1Value;
-            `ALUSRC1_PC  : w_AluInput1 = w_InstructionPointer;
+            `ALUSRC1_RS1     : w_AluInput1 = w_rs1Value;
+            `ALUSRC1_PC      : w_AluInput1 = w_InstructionPointer;
+            `ALUSRC1_CONST_0 : w_AluInput1 = 32'd0;
+            default          : w_AluInput1 = 32'd0;
         endcase
 
         case (w_AluSource2)
