@@ -12,9 +12,14 @@ module memory(
     input i_ReadEnable,
     input [31:0] i_Address,
     input [31:0] i_DataIn,
+    input [2:0] i_Mode,
 
     output [31:0] o_DataOut
 );
+
+    logic [31:0] w_WriteData;
+    logic [31:0] w_ReadData;
+    logic [31:0] w_RAMData;
 
     // Limiting to 32K total for now.
     // That's 8096 32-bit words, for a byte-address of 15 bits.
@@ -35,9 +40,64 @@ module memory(
     // TODO: Move to a purely synchronous RAM once pipelined.
     // Will need an output-valid bit to stall the pipeline
     // on e.g. a cache miss.
-    assign o_DataOut = i_ReadEnable ? r_RAM[w_WordAddress] : 32'hffffffff;
+
+    // assign o_DataOut = i_ReadEnable ? r_RAM[w_WordAddress] : 32'hffffffff;
+    assign o_DataOut = i_ReadEnable ? w_ReadData : 32'hffffffff;
 
     // TODO: HANDLE MISALIGNED AND NON-WORD READS/WRITES!!!
+
+    logic w_Misaligned;
+    logic w_InvalidMode;
+
+    assign w_RAMData = r_RAM[w_WordAddress];
+    always_comb begin
+
+        w_Misaligned = 0;
+        w_InvalidMode = 0;
+        w_ReadData = 32'hffffffff;
+        w_WriteData = 32'hffffffff;
+
+        if (i_ReadEnable) begin
+            case ({i_Mode, i_Address[1:0]})
+                {`LOAD_BYTE, 2'b00} : w_ReadData = {{24{w_RAMData[31]}}, w_RAMData[7:0]};
+                {`LOAD_BYTE, 2'b01} : w_ReadData = {{24{w_RAMData[31]}}, w_RAMData[15:8]};
+                {`LOAD_BYTE, 2'b10} : w_ReadData = {{24{w_RAMData[31]}}, w_RAMData[23:16]};
+                {`LOAD_BYTE, 2'b11} : w_ReadData = {{24{w_RAMData[31]}}, w_RAMData[31:24]};
+                {`LOAD_BYTE_UNSIGNED, 2'b00} : w_ReadData = {24'b0, w_RAMData[7:0]};
+                {`LOAD_BYTE_UNSIGNED, 2'b01} : w_ReadData = {24'b0, w_RAMData[15:8]};
+                {`LOAD_BYTE_UNSIGNED, 2'b10} : w_ReadData = {24'b0, w_RAMData[23:16]};
+                {`LOAD_BYTE_UNSIGNED, 2'b11} : w_ReadData = {24'b0, w_RAMData[31:24]};
+                {`LOAD_HALF, 2'b00} : w_ReadData = {{16{w_RAMData[31]}}, w_RAMData[15:0]};
+                {`LOAD_HALF, 2'b10} : w_ReadData = {{16{w_RAMData[31]}}, w_RAMData[31:16]};
+                {`LOAD_HALF_UNSIGNED, 2'b00} : w_ReadData = {16'b0, w_RAMData[15:0]};
+                {`LOAD_HALF_UNSIGNED, 2'b10} : w_ReadData = {16'b0, w_RAMData[31:16]};
+                {`LOAD_WORD, 2'b00} : w_ReadData = w_RAMData;
+
+                {`LOAD_HALF, 2'b01},
+                {`LOAD_HALF, 2'b11},
+                {`LOAD_HALF_UNSIGNED, 2'b01},
+                {`LOAD_HALF_UNSIGNED, 2'b11},
+                {`LOAD_WORD, 2'b01},
+                {`LOAD_WORD, 2'b10},
+                {`LOAD_WORD, 2'b11} : w_Misaligned = 1;
+                default : w_InvalidMode = 1;
+            endcase
+        end
+
+        // TODO: How to write a single byte or half? Read the value first,
+        // modify, then write back? Xilinx block RAMs have a per-byte write
+        // enable which could help (at least for write-back cache writes),
+        // but the bytes are 9 bits, so a 36-bit cache word would have to
+        // ignore every ninth bit, rather than the last 4 bits of the 36
+        // bit word.
+        if (i_WriteEnable) begin
+            case ({i_Mode, i_Address[1:0]})
+                // TODO
+            end case
+        end
+
+    end
+
 
     always_ff @ (posedge i_Clock) begin
         if (i_WriteEnable) begin
