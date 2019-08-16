@@ -93,7 +93,16 @@ class Depfile(object):
 
         if args.cmake_module_path is not CMAKE_STDOUT:
             outputs.add(args.cmake_module_path)
+
+        # Depend on this Python file so that Vmodules are regenerated
+        # if the script that generates them (this one) changes.
         depends.add(__file__)
+
+        # Remove the dependence on the Verilator binary as CMake
+        # on MacOS thinks of it as a local file.
+        # FUTURE: This should be a dependency, but an absolute one.
+        depends.discard('verilator_bin')
+
         return cls(outputs, depends)
 
     def outputs_of_extension(self, extension):
@@ -131,7 +140,7 @@ class Depfile(object):
 
 def run_verilator(args, include_paths):
     cmd = [
-        'verilator',
+        'verilator_bin',
         '-Wall', '-cc', '--MMD',
         '--Mdir', args.verilator_output_dir,
         *[f'-I{path}' for path in include_paths],

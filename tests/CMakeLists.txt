@@ -21,8 +21,19 @@ target_link_libraries(unit_tests
 )
 
 target_compile_options(unit_tests PRIVATE
+    -std=c++14
+    -pedantic
     -Wall
     -Wextra
-    -Werror
+    # -Werror
+    -Weffc++
+    -Wshadow
+    -Wcast-qual
+    -Wold-style-cast
+    -Wfloat-equal
+
     -fdiagnostics-color
+
+    -O2
+    # -g
 )

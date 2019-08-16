@@ -2,6 +2,16 @@
 # Verilog modules listed here will be "Verilated" into their own
 # library target suitable for linking into an executable test target.
 
+if (LINUX)
+    set(VERILATOR_INCLUDE_DIR "/usr/share/verilator/include")
+elseif (APPLE)
+    set(VERILATOR_INCLUDE_DIR "/usr/local/share/verilator/include")
+else()
+    # TODO: Try to find it using find_package or something?
+    message(FATAL_ERROR "I don't know where to find the Verilator include files!")
+endif()
+
+
 function(verilate_cmake)
     cmake_parse_arguments(VERILATE_CMAKE "" "VERILOG_MODULE" "" ${ARGN})
     get_filename_component(VERILOG_MODULE_NAME "${VERILATE_CMAKE_VERILOG_MODULE}" NAME_WE)
@@ -13,7 +23,7 @@ function(verilate_cmake)
                 "${CMAKE_SOURCE_DIR}/rtl/${VERILATE_CMAKE_VERILOG_MODULE}"
                 "-I${PROJECT_SOURCE_DIR}/rtl"
                 --verilator-output-dir "${CMAKE_CURRENT_BINARY_DIR}/verilator_output/V${VERILOG_MODULE_NAME}"
-                --verilator-include-dir "/usr/share/verilator/include"
+                --verilator-include-dir "${VERILATOR_INCLUDE_DIR}"
                 --cmake "${OUTPUT_CMAKE_FILE_PATH}"
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         )
