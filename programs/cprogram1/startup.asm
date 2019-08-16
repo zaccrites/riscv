@@ -20,56 +20,70 @@ _start:
 #     j 1b
 # 2:
 
-    # Setup stack pointer
-    la sp, _stack_start
+#    # Setup stack pointer
+#     la sp, _stack_start
+#
+#    # Jump to main program
+#    # li a0, 4
+#    # la a1, fake_argv
+#    li a0, 3
+#    li a1, 0
+#    # jal main
+#
+#    # mv s0, a0
+#    # mv s1, a1
+#    # li a0, 0
+#    # ecall
+#
+#    # Print status code
+#    #mv a1, a0
+#    #li a0, 1
+#    #ecall
+#
+#
+#
+#
+#    addi    sp,sp,-32 # ffe0 <_edata+0x7fe0>
+#    sw  s0,28(sp)
+#    addi    s0,sp,32
+#    sw  a0,-20(s0)
+#    sw  a1,-24(s0)
+#
+#
+#    # BUG: a5=0 after this, then it should =3
+#    # Either the load or store to the intended stack address is failing
+#    lw  a5,-20(s0)
+#
+#
+#
+#    mv t6, a0
+#    lw t5, -20(s0)
+#
+#
+#    li a0, 0
+#    ecall
+#
+#
+#    addi    a5,a5,4
+#    mv  a0,a5
+#    lw  s0,28(sp)
+#    addi    sp,sp,32
+#    # ret
 
-    # Jump to main program
-    # li a0, 4
-    # la a1, fake_argv
-    li a0, 3
-    li a1, 0
-    # jal main
-
-    # mv s0, a0
-    # mv s1, a1
-    # li a0, 0
-    # ecall
-
-    # Print status code
-    #mv a1, a0
-    #li a0, 1
-    #ecall
 
 
+     # la sp, _stack_start
+     la sp, 0x200
+
+     li x3, 0x0100
+     sw x3, 0(sp)
+     li x3, 0x0050
+
+     lw x3, 0(sp)
 
 
-    addi    sp,sp,-32 # ffe0 <_edata+0x7fe0>
-    sw  s0,28(sp)
-    addi    s0,sp,32
-    sw  a0,-20(s0)
-    sw  a1,-24(s0)
-
-
-    # BUG: a5=0 after this, then it should =3
-    # Either the load or store to the intended stack address is failing
-    lw  a5,-20(s0)
-
-
-
-    mv t6, a0
-    lw t5, -20(s0)
-
-
-    li a0, 0
-    ecall
-
-
-    addi    a5,a5,4
-    mv  a0,a5
-    lw  s0,28(sp)
-    addi    sp,sp,32
-    # ret
-
+     li a0, 0
+     ecall
 
 
 

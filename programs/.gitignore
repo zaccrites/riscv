@@ -1,6 +1,12 @@
 
+# generated object files
 *.o
 *.elf
+
+# generated assembly
+*.s
+
+# generated binary image files
 *.bin
 *.hex
 

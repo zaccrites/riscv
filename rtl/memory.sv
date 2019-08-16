@@ -15,7 +15,6 @@ module memory(
     input [31:0] i_Address,
     input [31:0] i_DataIn,
     input [2:0] i_Mode,
-
     output [31:0] o_DataOut
 );
 
@@ -37,16 +36,16 @@ module memory(
     // This is awkward when accessing misaligned words or halfwords,
     // but the manual does say that misaligned accesses are not
     // guaranteed to be atomic and can even be handled in a software trap.
-    logic [12:0] w_WordAddress = i_Address[14:2];
+    logic [12:0] w_WordAddress;
+    assign w_WordAddress = i_Address[14:2];
 
     // TODO: Move to a purely synchronous RAM once pipelined.
     // Will need an output-valid bit to stall the pipeline
     // on e.g. a cache miss.
 
-    // assign o_DataOut = i_ReadEnable ? r_RAM[w_WordAddress] : 32'hffffffff;
     assign o_DataOut = i_ReadEnable ? w_ReadData : 32'hffffffff;
 
-    // TODO: HANDLE MISALIGNED AND NON-WORD READS/WRITES!!!
+    // TODO: Raise exception on misaligned memory read/write
 
     logic w_Misaligned;
     logic w_InvalidMode;
@@ -105,11 +104,10 @@ module memory(
     always_ff @ (posedge i_Clock) begin
         if (i_WriteEnable) begin
             r_RAM[w_WordAddress] <= i_DataIn;
-            $display("MEMORY: Wrote 0x%08x to address 0x%08x (word index %d)", i_DataIn, i_Address, w_WordAddress);
         end
 
         if (i_ReadEnable) begin
-            $display("MEMORY: Read 0x%08x from address 0x%08x (word index %d)", o_DataOut, i_Address, w_WordAddress);
+            // TODO
         end
     end
 
