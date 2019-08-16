@@ -8,9 +8,19 @@ TEST(Memory, main)
 {
     Vmemory dut;
     dut.i_Clock = 0;
+
+    dut.i_ReadEnable = 1;
+
+    // TODO: Add test for different read modes
+    dut.i_Mode = 0b010;
+
     dut.eval();
 
-    for (uint32_t address = 0; address < 1024; address++) {
+    // TODO: Generate a C++ header for SystemVerilog cpudefs
+
+
+    // This is word aligned only at the moment!
+    for (uint32_t address = 0; address < 1024; address += 4) {
         dut.i_Address = address;
         uint32_t value = 0x12340000 | (address & 0x0000ffff);
 
