@@ -1,11 +1,11 @@
 
 
 RISCV_BIN=/opt/riscv/bin
-AS=$(RISCV_BIN)/riscv64-unknown-elf-as
-CC=$(RISCV_BIN)/riscv64-unknown-elf-gcc
-LD=$(RISCV_BIN)/riscv64-unknown-elf-ld
-OBJDUMP=$(RISCV_BIN)/riscv64-unknown-elf-objdump
-OBJCOPY=$(RISCV_BIN)/riscv64-unknown-elf-objcopy
+AS=$(RISCV_BIN)/riscv32-unknown-elf-as
+CC=$(RISCV_BIN)/riscv32-unknown-elf-gcc
+LD=$(RISCV_BIN)/riscv32-unknown-elf-ld
+OBJDUMP=$(RISCV_BIN)/riscv32-unknown-elf-objdump
+OBJCOPY=$(RISCV_BIN)/riscv32-unknown-elf-objcopy
 
 
 all: factorial

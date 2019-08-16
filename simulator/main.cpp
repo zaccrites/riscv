@@ -74,7 +74,10 @@ int main(int argc, char** argv)
 
 
     // https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
-    std::ifstream fs {"/home/zac/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
+
+    // std::ifstream fs {"/home/zac/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
+    std::ifstream fs {"/Users/zaccrites/Code/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
+
     // std::istream_iterator<uint32_t> start { fs };
     // std::vector<uint32_t> programInstructions { start, {} };
     if (fs.is_open())

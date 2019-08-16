@@ -16,22 +16,44 @@ You'll need these tools to run the simulator:
 
 ### MacOS
 
-    TODO
+TODO
 
     brew install verilator cmake ninja
 
 ### Windows
 
+TODO
+
+
+## RISC-V GCC Toolchain
+
+### Ubuntu
+
+    sudo apt install -y git autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+
+### MacOS
+
+    brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
+
+Other stuff I had to do to get it to build...
+
+* See https://stackoverflow.com/a/50072446. homebrew claimed to install
+  version 4.0.2 of mpfr, but didn't supply a `libmpfr.4.dylib` to link against.
+
+### Windows
+
     TODO
+
 
 ## Vivado
 
 TODO
 
 
+
 # Building
 
-Then run these commands to set up the CMake build:
+Run these commands to set up the CMake build:
 
     git clone git@gitlab.com:zaccrites/riscv.git
 
@@ -43,11 +65,6 @@ Then run these commands to set up the CMake build:
     ninja -C riscv-build
 
 
-To compile the RISC-V toolchain:
-
-    TODO
-
-
 Run the simulator test suite:
 
     riscv-build/tests/unit_tests
@@ -56,6 +73,8 @@ Run the simulator test suite:
 To run the simulator on a program:
 
     TODO
+
+    riscv-build/simulator/simulator
 
 
 To generate a bitstream and run on an FPGA:

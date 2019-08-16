@@ -9,8 +9,6 @@ fi
 
 set -e
 
-apt-get install -y git autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
-
 pushd /tmp
 if [ -d riscv-toolchain-install ]; then
     rm -rf riscv-toolchain-install
