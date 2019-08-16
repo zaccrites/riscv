@@ -69,6 +69,7 @@ module cpu(
         .i_WriteEnable            (0),
         .i_Address                (w_InstructionPointer),
         .i_DataIn                 (32'b0),
+        .i_Mode                   (`LOAD_WORD),
         .o_DataOut                (w_InstructionWord)
     );
 
@@ -122,6 +123,7 @@ module cpu(
         .i_ReadEnable             (w_MemRead),
         .i_WriteEnable            (w_MemWrite),
         .i_DataIn                 (w_rs2Value),
+        .i_Mode                   (w_Funct),
         .o_DataOut                (w_MemValue)
     );
 

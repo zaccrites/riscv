@@ -1,4 +1,6 @@
 
+`include "cpudefs.sv"
+
 // Generic split memory module for now
 // TODO: Replace with unified memory and a split cache
 
@@ -90,11 +92,12 @@ module memory(
         // but the bytes are 9 bits, so a 36-bit cache word would have to
         // ignore every ninth bit, rather than the last 4 bits of the 36
         // bit word.
-        if (i_WriteEnable) begin
-            case ({i_Mode, i_Address[1:0]})
-                // TODO
-            end case
-        end
+        //
+        // if (i_WriteEnable) begin
+        //     case ({i_Mode, i_Address[1:0]})
+        //         // TODO
+        //     endcase
+        // end
 
     end
 
