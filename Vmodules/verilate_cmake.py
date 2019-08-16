@@ -235,8 +235,18 @@ def main():
                 depfile.needs_regen,
             ]
             if any(cmake_dirty_criteria):
-                with open(args.cmake_module_path, 'w') as f:
-                    f.write(content)
+                # TODO: Only write to the file if the dependencies have changed.
+                # Otherwise we have to re-run CMake every time we make a change
+                # to a Verilog source file.
+
+                # This is a bit hacky, but it will do for now.
+                write_cmake_file = True
+                if os.path.exists(args.cmake_module_path):
+                    with open(args.cmake_module_path, 'r') as f:
+                        write_cmake_file = f.read() != content
+                if write_cmake_file:
+                    with open(args.cmake_module_path, 'w') as f:
+                        f.write(content)
             else:
                 print(f'-- {args.cmake_module_path} up-to-date.')
 
