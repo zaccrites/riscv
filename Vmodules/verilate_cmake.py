@@ -14,7 +14,6 @@ import colorama
 
 # Sentinel object to indicate if output should to to stdout.
 CMAKE_STDOUT = object()
-DEFINES_HEADER_STDOUT = object()
 
 
 CMAKE_TEMPLATE = r'''
@@ -116,13 +115,8 @@ class Depfile(object):
                 outputs.update(line_outputs.split())
                 depends.update(line_depends.split())
 
-        outputs.add(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'))
         if args.cmake_module_path is not CMAKE_STDOUT:
             outputs.add(args.cmake_module_path)
-
-        # Depend on this Python file so that Vmodules are regenerated
-        # if the script that generates them (this one) changes.
-        depends.add(__file__)
 
         # Remove the dependence on the Verilator binary as CMake
         # on MacOS thinks of it as a local file.
@@ -165,10 +159,16 @@ class Depfile(object):
 
 
 def run_verilator(args):
+    output_dir = args.verilator_output_dir
+    try:
+        os.makedirs(output_dir)
+    except FileExistsError:
+        pass
+
     cmd = [
         'verilator_bin',
         '-Wall', '-cc', '--MMD',
-        '--Mdir', args.verilator_output_dir,
+        '--Mdir', output_dir,
         *[f'-I{path}' for path in args.verilog_include_paths],
         '-cc', args.verilog_module,
     ]
@@ -187,11 +187,17 @@ def run_verilator(args):
 
 
 def get_verilog_defines(args):
+    output_dir = f'{args.verilator_output_dir}_defines'
+    try:
+        os.makedirs(output_dir)
+    except FileExistsError:
+        pass
+
     cmd = [
         'verilator_bin',
         '-E', '--dump-defines',
         *[f'-I{path}' for path in args.verilog_include_paths],
-        '--Mdir', args.verilator_output_dir,
+        '--Mdir', output_dir,
         args.verilog_module,
     ]
 
@@ -259,21 +265,10 @@ def main():
         help='Location of Verilator installation include directory',
     )
     args = parser.parse_args()
-    module_name = os.path.splitext(os.path.basename(args.verilog_module))[0]
-
-
-
-    try:
-        os.makedirs(args.verilator_output_dir)
-    except FileExistsError:
-        pass
-
-
-    environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
-
-
 
     # FUTURE: Regex against the file instead?
+    module_name = os.path.splitext(os.path.basename(args.verilog_module))[0]
+    defines_header_path = os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h')
     common_parameters = {
         'verilog_module_name': module_name,
         'verilog_module_path': args.verilog_module,
@@ -283,8 +278,7 @@ def main():
         '__file__': __file__,
     }
 
-
-
+    environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
 
     # TODO: Don't always regenerate this file
     # TODO: You have to run this BEFORE running the main Verilator call
@@ -296,28 +290,23 @@ def main():
         **common_parameters,
         defines=sorted(get_verilog_defines(args).items()),
     )
+    with open(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'), 'w') as f:
+        f.write(content)
 
+    def get_depfile():
+        depfile = Depfile.parse(args, module_name)
+        depfile.outputs.add(defines_header_path)
+        depfile.depends.add(__file__)
+        return depfile
 
-
-
-    previous_depfile = Depfile.parse(args, module_name)
+    previous_depfile = get_depfile()
     status_code = run_verilator(args)
     if status_code:
         print(f'ERROR: Verilator exited with status {status_code}', file=sys.stderr)
         return status_code
 
-
-    # Uses above _defines.h content
-    with open(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'), 'w') as f:
-        f.write(content)
-
-
-
-
-
-
     if args.cmake_module_path is not None:
-        depfile = Depfile.parse(args, module_name)
+        depfile = get_depfile()
         parameters = {
             **common_parameters,
             'outputs': sorted(depfile.outputs),

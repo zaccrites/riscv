@@ -3,12 +3,13 @@
 #include <gtest/gtest.h>
 #include "test_helper.hpp"
 #include "Valu.h"
+#include "Valu_defines.h"
 
 
 TEST(Alu, Add)
 {
     Valu dut;
-    dut.i_AluOp = 0b000;
+    dut.i_AluOp = SVDEF_ALUOP_ADD;
     dut.i_AluOpAlt = 0;
 
     dut.i_Source1 = 150;
@@ -34,7 +35,7 @@ TEST(Alu, Add)
 TEST(Alu, ShiftLeft)
 {
     Valu dut;
-    dut.i_AluOp = 0b001;
+    dut.i_AluOp = SVDEF_ALUOP_SLL;
     dut.i_AluOpAlt = 0;
     dut.i_Source1 = 0x12345678;
 
@@ -50,7 +51,7 @@ TEST(Alu, ShiftLeft)
 TEST(Alu, SetLessThan)
 {
     Valu dut;
-    dut.i_AluOp = 0b010;
+    dut.i_AluOp = SVDEF_ALUOP_SLT;
 
     dut.i_Source1 = 10;
     dut.i_Source2 = 20;
@@ -100,7 +101,7 @@ TEST(Alu, SetLessThan)
 TEST(Alu, SetLessThanUnsigned)
 {
     Valu dut;
-    dut.i_AluOp = 0b011;
+    dut.i_AluOp = SVDEF_ALUOP_SLTU;
 
     dut.i_Source1 = 0xffffff00;
     dut.i_Source2 = 0xffffffff;
@@ -126,7 +127,7 @@ TEST(Alu, SetLessThanUnsigned)
 TEST(Alu, ShiftRightLogical)
 {
     Valu dut;
-    dut.i_AluOp = 0b101;
+    dut.i_AluOp = SVDEF_ALUOP_SRL;
     dut.i_AluOpAlt = 0;
     dut.i_Source1 = 0x12345678;
 
@@ -143,7 +144,7 @@ TEST(Alu, ShiftRightLogical)
 TEST(Alu, ShiftRightArithmetic)
 {
     Valu dut;
-    dut.i_AluOp = 0b101;
+    dut.i_AluOp = SVDEF_ALUOP_SRL;
     dut.i_AluOpAlt = 1;
 
     // With cleared MSB
@@ -221,7 +222,7 @@ TEST(Alu, ShiftRightArithmetic)
 TEST(Alu, BitwiseAnd)
 {
     Valu dut;
-    dut.i_AluOp = 0b111;
+    dut.i_AluOp = SVDEF_ALUOP_AND;
     dut.i_Source1 = 0x12345678;
     dut.i_Source2 = 0xaabcdeff;
     dut.eval();
@@ -232,7 +233,7 @@ TEST(Alu, BitwiseAnd)
 TEST(Alu, BitwiseOr)
 {
     Valu dut;
-    dut.i_AluOp = 0b110;
+    dut.i_AluOp = SVDEF_ALUOP_OR;
     dut.i_Source1 = 0x12345678;
     dut.i_Source2 = 0xaabcdeff;
     dut.eval();
@@ -243,7 +244,7 @@ TEST(Alu, BitwiseOr)
 TEST(Alu, BitwiseXor)
 {
     Valu dut;
-    dut.i_AluOp = 0b100;
+    dut.i_AluOp = SVDEF_ALUOP_XOR;
     dut.i_Source1 = 0x12345678;
     dut.i_Source2 = 0xaabcdeff;
     dut.eval();
