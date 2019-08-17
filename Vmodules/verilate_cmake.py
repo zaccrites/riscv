@@ -4,6 +4,7 @@
 
 import os
 import sys
+import re
 import argparse
 import subprocess
 
@@ -13,9 +14,10 @@ import colorama
 
 # Sentinel object to indicate if output should to to stdout.
 CMAKE_STDOUT = object()
+DEFINES_HEADER_STDOUT = object()
 
 
-TEMPLATE = r'''
+CMAKE_TEMPLATE = r'''
 # ============================================================================
 # "V{{ verilog_module_name }}" library target
 #   Verilated {{ verilog_module_path }}
@@ -64,6 +66,29 @@ add_custom_command(
 
 '''
 
+DEFINES_HEADER_TEMPLATE = r'''
+// ============================================================================
+//   Verilated {{ verilog_module_path }} defines
+// ============================================================================
+
+// This file was auto-generated!
+// DO NOT EDIT!
+
+#ifndef V{{ verilog_module_name | upper }}_DEFINES_H
+#define V{{ verilog_module_name | upper }}_DEFINES_H
+
+{% for identifier, value in defines %}
+#ifdef SVDEF_{{ identifier }}
+#error SVDEF_{{ identifier }} is already defined, so the Verilog define cannot be used!
+#else
+#define SVDEF_{{ identifier }}  {{ value }}
+#endif
+{% endfor %}
+
+#endif
+
+'''
+
 
 class Depfile(object):
 
@@ -72,7 +97,7 @@ class Depfile(object):
         self.depends = depends
 
     @classmethod
-    def parse(cls, args):
+    def parse(cls, args, module_name):
         depfiles = [
             os.path.join(args.verilator_output_dir, filename)
             for filename in os.listdir(args.verilator_output_dir) if
@@ -91,6 +116,7 @@ class Depfile(object):
                 outputs.update(line_outputs.split())
                 depends.update(line_depends.split())
 
+        outputs.add(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'))
         if args.cmake_module_path is not CMAKE_STDOUT:
             outputs.add(args.cmake_module_path)
 
@@ -138,12 +164,12 @@ class Depfile(object):
         return not self.__eq__(other)
 
 
-def run_verilator(args, include_paths):
+def run_verilator(args):
     cmd = [
         'verilator_bin',
         '-Wall', '-cc', '--MMD',
         '--Mdir', args.verilator_output_dir,
-        *[f'-I{path}' for path in include_paths],
+        *[f'-I{path}' for path in args.verilog_include_paths],
         '-cc', args.verilog_module,
     ]
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
@@ -158,6 +184,49 @@ def run_verilator(args, include_paths):
         else:
             print(line, file=sys.stderr)
     return p.returncode
+
+
+def get_verilog_defines(args):
+    cmd = [
+        'verilator_bin',
+        '-E', '--dump-defines',
+        *[f'-I{path}' for path in args.verilog_include_paths],
+        '--Mdir', args.verilator_output_dir,
+        args.verilog_module,
+    ]
+
+    raw_defines = []
+    for line in subprocess.check_output(cmd).decode('utf-8').splitlines():
+        directive, identifier, *value = line.split(None, 2)
+        value = value[0] if value else ''
+        raw_defines.append((directive, identifier, value))
+
+    defines = {}
+    while raw_defines:
+        directive, identifier, value = raw_defines.pop()
+
+        if directive != '`define':
+            continue
+
+        # If a new define aliases a previous one, then use its value.
+        # If we haven't processed it yet, then wait.
+        if value and value[0] == '`':
+            alias = value[1:]
+            try:
+                value = defines[alias]
+            except KeyError:
+                continue
+
+        # Try to decode integer literals.
+        if value is not None:
+            pattern = r"\d+'([bdoh])(\d+)"
+            match = re.match(pattern, value.lower())
+            if match:
+                base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[match.group(1)]
+                value = f'{int(match.group(2), base)}     /* {match.group(0)} */'
+
+        defines[identifier] = value
+    return defines
 
 
 def main():
@@ -177,8 +246,8 @@ def main():
         nargs='?',
         dest='cmake_module_path',
         const=CMAKE_STDOUT,
-        help=('Generate CMake module at given path. If no path is given, '
-              'output is written to stdout.'),
+        help=('Generate CMake module at the given path. '
+              'If no path is given, output is written to stdout.'),
     )
     parser.add_argument(
         '--verilator-output-dir',
@@ -190,39 +259,75 @@ def main():
         help='Location of Verilator installation include directory',
     )
     args = parser.parse_args()
+    module_name = os.path.splitext(os.path.basename(args.verilog_module))[0]
+
+
 
     try:
         os.makedirs(args.verilator_output_dir)
     except FileExistsError:
         pass
 
-    previous_depfile = Depfile.parse(args)
-    status_code = run_verilator(args, args.verilog_include_paths)
+
+    environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
+
+
+
+    # FUTURE: Regex against the file instead?
+    common_parameters = {
+        'verilog_module_name': module_name,
+        'verilog_module_path': args.verilog_module,
+        'verilog_include_paths': args.verilog_include_paths,
+        'verilator_output_dir': args.verilator_output_dir,
+        'verilator_include_dir': args.verilator_include_dir,
+        '__file__': __file__,
+    }
+
+
+
+
+    # TODO: Don't always regenerate this file
+    # TODO: You have to run this BEFORE running the main Verilator call
+    # or it overwrites the .d file. I kind of hate this. Can I just have
+    # it write to a separate directory and then write the resulting _defines.h
+    # file to the original directory instead?
+    template = environment.from_string(DEFINES_HEADER_TEMPLATE)
+    content = template.render(
+        **common_parameters,
+        defines=sorted(get_verilog_defines(args).items()),
+    )
+
+
+
+
+    previous_depfile = Depfile.parse(args, module_name)
+    status_code = run_verilator(args)
     if status_code:
         print(f'ERROR: Verilator exited with status {status_code}', file=sys.stderr)
         return status_code
 
-    if args.cmake_module_path:
-        depfile = Depfile.parse(args)
 
-        # FUTURE: Regex against the file instead?
-        module_name = os.path.splitext(os.path.basename(args.verilog_module))[0]
+    # Uses above _defines.h content
+    with open(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'), 'w') as f:
+        f.write(content)
 
-        environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
-        template = environment.from_string(TEMPLATE)
-        content = template.render(
-            verilog_module_name=module_name,
-            verilog_module_path=args.verilog_module,
-            verilog_include_paths=args.verilog_include_paths,
-            verilator_output_dir=args.verilator_output_dir,
-            verilator_include_dir=args.verilator_include_dir,
-            generated_source_files=sorted(depfile.outputs_of_extension('.cpp')),
-            generated_header_files=sorted(depfile.outputs_of_extension('.h')),
-            outputs=sorted(depfile.outputs),
-            depends=sorted(depfile.depends),
-            cmake_output_path='' if args.cmake_module_path is CMAKE_STDOUT else args.cmake_module_path,
-            __file__=__file__,
-        )
+
+
+
+
+
+    if args.cmake_module_path is not None:
+        depfile = Depfile.parse(args, module_name)
+        parameters = {
+            **common_parameters,
+            'outputs': sorted(depfile.outputs),
+            'depends': sorted(depfile.depends),
+            'generated_source_files': sorted(depfile.outputs_of_extension('.cpp')),
+            'generated_header_files': sorted(depfile.outputs_of_extension('.h')),
+            'cmake_output_path': '' if args.cmake_module_path is CMAKE_STDOUT else args.cmake_module_path,
+        }
+        template = environment.from_string(CMAKE_TEMPLATE)
+        content = template.render(**parameters)
         if args.cmake_module_path is CMAKE_STDOUT:
             print(content)
         else:
@@ -235,21 +340,11 @@ def main():
                 depfile.needs_regen,
             ]
             if any(cmake_dirty_criteria):
-                # TODO: Only write to the file if the dependencies have changed.
-                # Otherwise we have to re-run CMake every time we make a change
-                # to a Verilog source file.
-
-                # This is a bit hacky, but it will do for now.
-                write_cmake_file = True
-                if os.path.exists(args.cmake_module_path):
-                    with open(args.cmake_module_path, 'r') as f:
-                        write_cmake_file = f.read() != content
-                if write_cmake_file:
-                    with open(args.cmake_module_path, 'w') as f:
-                        f.write(content)
+                # TODO: Is this not working?
+                with open(args.cmake_module_path, 'w') as f:
+                    f.write(content)
             else:
                 print(f'-- {args.cmake_module_path} up-to-date.')
-
 
 
 if __name__ == '__main__':

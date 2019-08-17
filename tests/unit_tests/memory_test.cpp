@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include "test_helper.hpp"
 #include "Vmemory.h"
+#include "Vmemory_defines.h"
 
 
 TEST(Memory, main)
@@ -12,7 +13,7 @@ TEST(Memory, main)
     dut.i_ReadEnable = 1;
 
     // TODO: Add test for different read modes
-    dut.i_Mode = 0b010;
+    dut.i_Mode = SVDEF_LOAD_WORD;
 
     dut.eval();
 
