@@ -63,6 +63,9 @@ module cpu(
         .o_InstructionPointer     (w_InstructionPointer)
     );
 
+    // Note that instruction memory can't have a bad access mode,
+    // but CAN have a misaligned instruction memory access.
+    logic w1, w2;
     memory instruction_memory (
         .i_Clock                  (i_Clock),
         .i_ReadEnable             (1),
@@ -71,6 +74,10 @@ module cpu(
         .i_DataIn                 (32'b0),
         .i_Mode                   (`LOAD_WORD),
         .o_DataOut                (w_InstructionWord)
+
+        ,
+        .o_MisalignedAccess(w1),
+        .o_BadInstruction  (w2)
     );
 
     instruction_decode decode (
@@ -116,7 +123,7 @@ module cpu(
         .o_Output                 (w_AluOutput)
     );
 
-    // TODO: What happens if you try to read or write a byte or half word?
+    logic w3, w4;
     memory data_memory (
         .i_Clock                  (i_Clock),
         .i_Address                (w_AluOutput),
@@ -125,6 +132,10 @@ module cpu(
         .i_DataIn                 (w_rs2Value),
         .i_Mode                   (w_Funct),
         .o_DataOut                (w_MemValue)
+
+        ,
+        .o_MisalignedAccess(w3),
+        .o_BadInstruction  (w4)
     );
 
     always_comb begin
