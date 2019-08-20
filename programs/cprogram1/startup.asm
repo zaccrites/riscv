@@ -19,10 +19,4 @@ _start:
     li a1, 0
     jal main
 
-    # Exit simulator
-    li a0, 2
-    ecall
-    j .
-    nop
-    nop
-    nop
+    j _exit

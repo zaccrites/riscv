@@ -23,12 +23,27 @@
     // global2 += f(argc);
     // return myfunc(global2);
 
+
+
+int factorial(int n)
+{
+    int result;
+    if (n <= 1) result = 1;
+    else result = n * factorial(n - 1);
+    printnum(result);
+    return result;
+}
+
+
 int main()
 {
 
     const char* my_str = "Hello World!";
-
     printstr(my_str);
+
+    // printnum(factorial(5));
+    // printnum(factorial(3));
+    printnum(factorial(5));
 
     return 0;
 }

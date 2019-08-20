@@ -9,6 +9,8 @@
 
 
 void printstr(const char* str);
+void printnum(int value);
+void exit(void);
 
 
 
