@@ -33,9 +33,10 @@ add_library(V{{ verilog_module_name }}
     "{{ verilator_include_dir }}/verilated.cpp"
 )
 
-target_include_directories(V{{ verilog_module_name }} PUBLIC
-    "{{ verilator_output_dir }}"
-    "{{ verilator_include_dir }}"
+target_include_directories(V{{ verilog_module_name }}
+    SYSTEM PUBLIC
+        "{{ verilator_output_dir }}"
+        "{{ verilator_include_dir }}"
 )
 
 add_custom_command(

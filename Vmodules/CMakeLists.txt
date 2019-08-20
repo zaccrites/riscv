@@ -2,10 +2,12 @@
 # Verilog modules listed here will be "Verilated" into their own
 # library target suitable for linking into an executable test target.
 
-if (LINUX)
-    set(VERILATOR_INCLUDE_DIR "/usr/share/verilator/include")
-elseif (APPLE)
+if (APPLE)
+    # MacOS
     set(VERILATOR_INCLUDE_DIR "/usr/local/share/verilator/include")
+elseif (UNIX)
+    # Linux
+    set(VERILATOR_INCLUDE_DIR "/usr/share/verilator/include")
 else()
     # TODO: Try to find it using find_package or something?
     message(FATAL_ERROR "I don't know where to find the Verilator include files!")
