@@ -1,4 +1,6 @@
 
+#include <stddef.h>
+
 #include "runtime.h"
 
 // int global1;
@@ -21,8 +23,12 @@
     // global2 += f(argc);
     // return myfunc(global2);
 
-int main(int argc, char** argv)
+int main()
 {
-    (void)argv;
-    return 4 + argc;
+
+    const char* my_str = "Hello World!";
+
+    printstr(my_str);
+
+    return 0;
 }

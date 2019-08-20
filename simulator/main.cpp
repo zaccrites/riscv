@@ -37,46 +37,20 @@ int main(int argc, char** argv)
     Vcpu cpu;
     // RESET;
 
-    // // Load a program
-    // // TODO: Load from file passed in on command line
-    // uint32_t programInstructions[] = {
-    //     // 0000000000000000 <_start>:
-    //     /*   0:  */   0x01c000ef,  //            jal ra,1c <main>
-    //     /*   4:  */   0x00200513,  //            li  a0,2
-    //     /*   8:  */   0x00000073,  //            ecall
-    //     /*   c:  */   0x00000013,  //            nop
-    //     /*  10:  */   0x00000013,  //            nop
-    //     /*  14:  */   0x00000013,  //            nop
-    //     /*  18:  */   0x0000006f,  //            j   18 <_start+0x18>
+    // TODO: Integrate this into the wrapper class, at least until
+    // the cache is backed by a more standard RAM.
+    // auto writeCpuMemory = [&cpu](uint32_t address, uint32_t value) {
 
-    //     // 000000000000001c <main>:
-    //       1c:   00a00413            li  s0,10
-    //       20:   00000493            li  s1,0
-    //       24:   00100913            li  s2,1
-
-    //     // 0000000000000028 <.loop>:
-    //       28:   00100513            li  a0,1
-    //       2c:   00090593            mv  a1,s2
-    //       30:   00048293            mv  t0,s1
-    //       34:   00090493            mv  s1,s2
-    //       38:   00548933            add s2,s1,t0
-    //       3c:   fff40413            addi    s0,s0,-1
-    //       40:   fe0414e3            bnez    s0,28 <.loop>
-    //       44:   00008067            ret
     // };
-    // // memcpy(cpu.cpu__DOT__instruction_memory__DOT__r_RAM, programInstructions, sizeof(programInstructions));
+    // auto readCpuMemory = [cpu](uint32_t address) -> uint32_t {
 
-    // TODO: Use #defines for these internal Verilator signal references
-    // pProgramMemory[0] = programInstructions[0];
-    // pProgramMemory[1] = programInstructions[1];
-    // pProgramMemory[2] = programInstructions[2];
-
+    // }
 
 
     // https://stackoverflow.com/questions/15138785/how-to-read-a-file-into-vector-in-c
 
-    // std::ifstream fs {"/home/zac/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
-    std::ifstream fs {"/Users/zaccrites/Code/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
+    std::ifstream fs {"/home/zac/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
+    // std::ifstream fs {"/Users/zaccrites/Code/riscv/programs/cprogram1/cprogram1.bin", std::ios::binary};  // TODO: cmd line args
 
     // std::istream_iterator<uint32_t> start { fs };
     // std::vector<uint32_t> programInstructions { start, {} };
@@ -84,13 +58,16 @@ int main(int argc, char** argv)
     {
         // Randomize data memory before start.
         // TODO: Randomize unassigned instruction memory too
-        std::random_device dev;
-        std::mt19937 rng(dev());
-        std::uniform_int_distribution<uint32_t> dist(0, 0xffffffff);
-        for (size_t address = 0; address < 8096; address++)
-        {
-            cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address] = dist(rng);
-        }
+        // std::random_device dev;
+        // std::mt19937 rng(dev());
+        // std::uniform_int_distribution<uint8_t> dist(0, 0xffffffff);
+        // for (size_t address = 0; address < 0x8000; address++)
+        // {
+        //     cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][0] = dist(rng);
+        //     cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][1] = dist(rng);
+        //     cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][2] = dist(rng);
+        //     cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][3] = dist(rng);
+        // }
 
         // I understand this is not idiomatic C++, but the "right"
         // answer isn't working for me at all.
@@ -110,13 +87,20 @@ int main(int argc, char** argv)
                 break;
             }
 
-            if (address < 8096)
+            if (address < 0x8000/4)
             {
-                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address] = word;
+                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][0] = static_cast<uint8_t>(word);
+                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][1] = static_cast<uint8_t>(word >> 8);
+                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][2] = static_cast<uint8_t>(word >> 16);
+                cpu.cpu__DOT__instruction_memory__DOT__r_RAM[address][3] = static_cast<uint8_t>(word >> 24);
             }
             else
             {
-                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 8096] = word;
+                std::cout << std::hex << word << std::endl;
+                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][0] = static_cast<uint8_t>(word);
+                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][1] = static_cast<uint8_t>(word >> 8);
+                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][2] = static_cast<uint8_t>(word >> 16);
+                cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][3] = static_cast<uint8_t>(word >> 24);
             }
 
             address += 1;
@@ -136,14 +120,6 @@ int main(int argc, char** argv)
     bool programRunning = true;
     while (programRunning)
     {
-        //
-
-        // uint32_t address = cpu.o_InstructionPointer;
-        // if (address > 30 * 4) {
-        //     std::cerr << "Got to address " << std::hex << address << ", aborting" << std::endl;
-        //     break;
-        // }
-
         TICK;
 
         if (cpu.o_Syscall)
@@ -207,14 +183,23 @@ int main(int argc, char** argv)
 
             case 3:
             {
-                // // syscall 3: print a string
-                // char buffer[512];
-                // uint32_t address = cpu.cpu__DOT__registers__DOT__r_Registers[10];
-                // strncpy(buffer, &cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 64*1024*1024], sizeof(buffer)-1);
-                // buffer[511] = '\0';
-                // std::cout << buffer << std::endl;
+                // syscall 3: print a string
+                char buffer[512];
 
-                std::cout << "TODO: Allow printing string via syscall" << std::endl;
+                int i = 0;
+                while (true)
+                {
+                    uint32_t address = syscallParam/4 + (i / 4) - 0x8000/4;
+                    std::cout << std::hex << "syscallParam = " << syscallParam << "  | address = " << address << std::endl;
+                    char c = cpu.cpu__DOT__data_memory__DOT__r_RAM[address][i % 4];
+
+                    if (c == '\0') break;
+                    else if (i == sizeof(buffer) - 1) break;
+                    buffer[i++] = c;
+                }
+                buffer[i] = '\0';
+
+                std::cout << buffer << std::endl;
             }
             break;
 
@@ -224,10 +209,6 @@ int main(int argc, char** argv)
 
             }
 
-        }
-        else
-        {
-            // std::cout << std::hex << "At address " << address << std::endl;
         }
 
     }

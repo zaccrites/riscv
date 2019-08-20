@@ -16,3 +16,14 @@
 //     for (length = 0; *str != '\0'; length++);
 //     return length;
 // }
+
+
+
+
+void _write(const char*);
+
+
+void printstr(const char* str)
+{
+    _write(str);
+}

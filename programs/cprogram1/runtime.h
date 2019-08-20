@@ -3,9 +3,14 @@
 #define RUNTIME_H
 
 
-int f(int x);
+// int f(int x);
 
-int strlen(const char* str);
+// int strlen(const char* str);
+
+
+void printstr(const char* str);
+
+
 
 
 #endif
