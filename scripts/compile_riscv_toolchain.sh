@@ -2,14 +2,9 @@
 
 # https://github.com/riscv/riscv-gnu-toolchain/blob/master/README.md
 
-if [[ $EUID -ne 0 ]]; then
-    echo "Please run this script as root"
-    exit 1
-fi
-
 set -e
 
-pushd /tmp
+pushd "$HOME"
 if [ -d riscv-toolchain-install ]; then
     rm -rf riscv-toolchain-install
 fi
@@ -21,6 +16,5 @@ cd riscv-gnu-toolchain
 
 # Configure supported arch. Add M, A, etc. extensions as implemented.
 # https://github.com/riscv/riscv-gnu-toolchain#installation-linux
-./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
-
+sh ./configure --prefix="$HOME/riscv-toolchain" --with-arch=rv32i --with-abi=ilp32
 make
