@@ -1,7 +1,7 @@
 
 // TODO: Add exception support
 
-`include "cpudefs.sv"
+`include "branch_defs.sv"
 
 module program_counter(
     input i_Clock,

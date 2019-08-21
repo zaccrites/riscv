@@ -2,8 +2,9 @@
 // Extract fields from an instruction word and assert control signals.
 
 
-`include "cpudefs.sv"
-
+`include "cpu_defs.sv"
+`include "alu_defs.sv"
+`include "opcode_defs.sv"
 
 // TODO: This needs better tests.
 

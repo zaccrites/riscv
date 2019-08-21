@@ -1,5 +1,5 @@
 
-`include "cpudefs.sv"
+`include "memory_defs.sv"
 
 // Generic split memory module for now
 // TODO: Replace with unified memory and a split cache

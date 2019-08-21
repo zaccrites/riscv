@@ -24,6 +24,7 @@ function(verilate_cmake)
                 python "${CMAKE_CURRENT_LIST_DIR}/verilate_cmake.py"
                 "${CMAKE_SOURCE_DIR}/rtl/${VERILATE_CMAKE_VERILOG_MODULE}"
                 "-I${PROJECT_SOURCE_DIR}/rtl"
+                "-I${PROJECT_SOURCE_DIR}/rtl/include"
                 --verilator-output-dir "${CMAKE_CURRENT_BINARY_DIR}/verilator_output/V${VERILOG_MODULE_NAME}"
                 --verilator-include-dir "${VERILATOR_INCLUDE_DIR}"
                 --cmake "${OUTPUT_CMAKE_FILE_PATH}"

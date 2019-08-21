@@ -1,5 +1,5 @@
 
-`include "cpudefs.sv"
+`include "alu_defs.sv"
 
 
 module alu(

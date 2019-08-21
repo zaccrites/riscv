@@ -1,5 +1,6 @@
 
-`include "cpudefs.sv"
+`include "cpu_defs.sv"
+`include "memory_defs.sv"   // TODO: Remove this, once the instruction memory is replaced.
 
 /* verilator lint_off UNUSED */
 

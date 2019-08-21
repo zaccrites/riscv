@@ -1,8 +1,6 @@
 
-`ifndef CPUDEFS_SV
-`define CPUDEFS_SV
-
-`include "regdefs.sv"
+`ifndef OPCODE_DEFS_SV
+`define OPCODE_DEFS_SV
 
 
 `define OPCODE_LOAD         5'b00000
@@ -33,52 +31,6 @@
 `define OPCODE_SYSTEM       5'b11100
 // `define OPCODE_RESERVED_2   5`b11101
 // `define OPCODE_CUSTOM_3     5'b11110
-
-`define ALUSRC1_RS1      2'b00
-`define ALUSRC1_PC       2'b01
-`define ALUSRC1_CONST_0  2'b10
-
-`define ALUSRC2_RS2      2'b00
-`define ALUSRC2_IMM      2'b01
-`define ALUSRC2_CONST_4  2'b10
-
-
-`define WBSRC_ALU   0
-`define WBSRC_MEM   1
-// `define WBSRC_CSRALU   2'b10
-
-
-
-`define LOAD_BYTE           3'b000
-`define LOAD_HALF           3'b001
-`define LOAD_WORD           3'b010
-`define LOAD_BYTE_UNSIGNED  3'b100
-`define LOAD_HALF_UNSIGNED  3'b101
-
-`define STORE_BYTE  3'b000
-`define STORE_HALF  3'b001
-`define STORE_WORD  3'b010
-
-
-
-`define ALUOP_ADD    3'b000
-`define ALUOP_SLL    3'b001
-`define ALUOP_SLT    3'b010
-`define ALUOP_SLTU   3'b011
-`define ALUOP_XOR    3'b100
-`define ALUOP_SRL    3'b101
-`define ALUOP_OR     3'b110
-`define ALUOP_AND    3'b111
-
-
-
-// Designed to match Funct3 field of Bxx instructions
-`define BRANCH_EQ           3'b000
-`define BRANCH_NE           3'b001
-`define BRANCH_LT           3'b100
-`define BRANCH_GE           3'b101
-`define BRANCH_LTU          3'b110
-`define BRANCH_GEU          3'b111
 
 
 `endif
