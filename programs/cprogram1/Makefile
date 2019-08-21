@@ -1,17 +1,22 @@
-
 # TODO: Use CMake instead
 
-RISCV_BIN=/opt/riscv/bin
-AS=$(RISCV_BIN)/riscv64-unknown-elf-as
-CC=$(RISCV_BIN)/riscv64-unknown-elf-gcc
-LD=$(RISCV_BIN)/riscv64-unknown-elf-ld
-OBJDUMP=$(RISCV_BIN)/riscv64-unknown-elf-objdump
-OBJCOPY=$(RISCV_BIN)/riscv64-unknown-elf-objcopy
+RISCV=$(HOME)/riscv-toolchain
+TOOLCHAIN=riscv32-unknown-elf
+
+AS=$(RISCV)/bin/$(TOOLCHAIN)-as
+CC=$(RISCV)/bin/$(TOOLCHAIN)-gcc
+LD=$(RISCV)/bin/$(TOOLCHAIN)-ld
+OBJDUMP=$(RISCV)/bin/$(TOOLCHAIN)-objdump
+OBJCOPY=$(RISCV)/bin/$(TOOLCHAIN)-objcopy
 
 ARCH_FLAGS=-march=rv32i -mabi=ilp32
 ASFLAGS=--warn $(ARCH_FLAGS)
 CFLAGS=-std=gnu11 -Wall -Wextra -Werror -pedantic $(ARCH_FLAGS) -O0 -ffreestanding
-LDFLAGS=-T linker.ld --format elf32-littleriscv
+LDFLAGS= \
+	-T linker.ld \
+	--format elf32-littleriscv \
+	-L$(RISCV)/lib/gcc/$(TOOLCHAIN)/9.2.0
+LDLIBS= -lgcc
 
 
 all: cprogram1.bin
@@ -22,7 +27,7 @@ cprogram1.bin: cprogram1.elf
 
 
 cprogram1.elf: startup.o runtime.o main.o utils.o
-	$(LD) $(LDFLAGS) $^ -o $@
+	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 	$(OBJDUMP) -d $@ > cprogram1.s
 
 
