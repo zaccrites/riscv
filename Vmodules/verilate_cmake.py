@@ -159,51 +159,62 @@ class Depfile(object):
         return not self.__eq__(other)
 
 
-def run_verilator(args):
-    output_dir = args.verilator_output_dir
+class VerilatorError(RuntimeError):
+
+    def __init__(self, cmd, status, stdout, stderr):
+        self.cmd = cmd
+        self.status = status
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def print_stderr(self):
+        for line in self.stderr.splitlines():
+            if line.startswith('%Error'):
+                print(f'{colorama.Fore.RED}{line}{colorama.Style.RESET_ALL}', file=sys.stderr)
+            elif line.startswith('%Warning'):
+                print(f'{colorama.Fore.YELLOW}{line}{colorama.Style.RESET_ALL}', file=sys.stderr)
+            else:
+                print(line, file=sys.stderr)
+
+
+def run_verilator(verilator_args, output_dir):
     try:
         os.makedirs(output_dir)
     except FileExistsError:
         pass
 
-    cmd = [
-        'verilator_bin',
+    cmd = ['verilator_bin', *verilator_args, '--Mdir', output_dir]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    stdout = stdout.decode('utf-8')
+    stderr = stderr.decode('utf-8')
+
+    if p.returncode != 0:
+        raise VerilatorError(cmd, p.returncode, stdout, stderr)
+    return stdout
+
+
+def verilate_source_files(args):
+    output_dir = args.verilator_output_dir
+    verilator_args = [
         '-Wall', '-cc', '--MMD',
-        '--Mdir', output_dir,
         *[f'-I{path}' for path in args.verilog_include_paths],
         '-cc', args.verilog_module,
     ]
-    p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
-    _, stderr = p.communicate()
-
-    for line in stderr.splitlines():
-        line = line.decode('utf-8')
-        if line.startswith('%Error'):
-            print(f'{colorama.Fore.RED}{line}{colorama.Style.RESET_ALL}', file=sys.stderr)
-        elif line.startswith('%Warning'):
-            print(f'{colorama.Fore.YELLOW}{line}{colorama.Style.RESET_ALL}', file=sys.stderr)
-        else:
-            print(line, file=sys.stderr)
-    return p.returncode
+    print(run_verilator(verilator_args, output_dir))
 
 
 def get_verilog_defines(args):
     output_dir = f'{args.verilator_output_dir}_defines'
-    try:
-        os.makedirs(output_dir)
-    except FileExistsError:
-        pass
-
-    cmd = [
-        'verilator_bin',
+    verilator_args = [
         '-E', '--dump-defines',
         *[f'-I{path}' for path in args.verilog_include_paths],
-        '--Mdir', output_dir,
         args.verilog_module,
     ]
+    stdout = run_verilator(verilator_args, output_dir)
 
     raw_defines = []
-    for line in subprocess.check_output(cmd).decode('utf-8').splitlines():
+    for line in stdout.splitlines():
         directive, identifier, *value = line.split(None, 2)
         value = value[0] if value else ''
         raw_defines.append((directive, identifier, value))
@@ -281,15 +292,24 @@ def main():
 
     environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
 
+    def handle_verilator_error(exc):
+        exc.print_stderr()
+        print(f'ERROR: Verilator exited with status {exc.status}', file=sys.stderr)
+
     # TODO: Don't always regenerate this file
     # TODO: You have to run this BEFORE running the main Verilator call
     # or it overwrites the .d file. I kind of hate this. Can I just have
     # it write to a separate directory and then write the resulting _defines.h
     # file to the original directory instead?
+    try:
+        verilog_defines = get_verilog_defines(args)
+    except VerilatorError as exc:
+        handle_verilator_error(exc)
+        return 1
     template = environment.from_string(DEFINES_HEADER_TEMPLATE)
     content = template.render(
         **common_parameters,
-        defines=sorted(get_verilog_defines(args).items()),
+        defines=sorted(verilog_defines.items()),
     )
     with open(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'), 'w') as f:
         f.write(content)
@@ -301,10 +321,11 @@ def main():
         return depfile
 
     previous_depfile = get_depfile()
-    status_code = run_verilator(args)
-    if status_code:
-        print(f'ERROR: Verilator exited with status {status_code}', file=sys.stderr)
-        return status_code
+    try:
+        verilate_source_files(args)
+    except VerilatorError as exc:
+        handle_verilator_error(exc)
+        return 1
 
     if args.cmake_module_path is not None:
         depfile = get_depfile()
