@@ -11,9 +11,12 @@
 `define ALUSRC2_IMM      2'b01
 `define ALUSRC2_CONST_4  2'b10
 
-`define WBSRC_ALU   0
-`define WBSRC_MEM   1
-// `define WBSRC_CSRALU   2'b10
+`define WBSRC_ALU  2'b00
+`define WBSRC_MEM  2'b01
+`define WBSRC_CSR  2'b10
+
+`define CSRSRC_RS1  0
+`define CSRSRC_IMM  1
 
 
 `endif

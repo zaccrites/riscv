@@ -29,7 +29,7 @@ module cpu(
     logic w_MemRead;
     logic [1:0] w_AluSource1;
     logic [1:0] w_AluSource2;
-    logic w_WritebackSource;
+    logic [1:0] w_WritebackSource;
     logic [2:0] w_Funct;
     logic [2:0] w_AluOp;
     logic w_AluOpAlt;
@@ -49,6 +49,12 @@ module cpu(
     logic [31:0] w_rs1Value;
     logic [31:0] w_rs2Value;
     logic [31:0] w_MemValue;
+
+    logic w_CsrAluSource;
+    logic [11:0] w_CsrNumber;
+    logic [31:0] w_CsrInputData;
+    logic w_CsrReadEnable;
+    logic w_WriteReadEnable;
 
 
     program_counter pc (
@@ -99,7 +105,12 @@ module cpu(
         .o_AluOp                  (w_AluOp),
         .o_AluOpAlt               (w_AluOpAlt),
         .o_IllegalInstruction     (w_IllegalInstruction),
-        .o_JALR                   (w_JALR)
+        .o_JALR                   (w_JALR),
+
+        .o_CsrNumber              (w_CsrNumber),
+        .o_CsrAluSource           (w_CsrAluSource),
+        .o_CsrReadEnable          (w_CsrReadEnable),
+        .o_CsrWriteEnable         (w_CsrWriteEnable)
     );
 
     register_file registers (
@@ -111,6 +122,24 @@ module cpu(
         .i_DataIn                 (w_WritebackValue),
         .o_DataOut1               (w_rs1Value),
         .o_DataOut2               (w_rs2Value)
+    );
+
+    csr csr1(
+        .i_Clock          (i_Clock),
+        .i_InputData      (w_CsrInput),
+        .i_CsrNumber      (w_CsrNumber),
+
+        .i_ReadEnable (w_CsrReadEnable),
+        .i_WriteEnable (w_CsrWriteEnable),
+
+        .i_AluOp          (w_Funct),
+
+        // TODO: Use priority encoder to select incoming exception source
+        .i_ExceptionSource (0),
+
+        .i_rd             (w_rd),
+
+        .o_OutputData     (w_CsrOutput)
     );
 
     alu alu1 (
@@ -150,19 +179,26 @@ module cpu(
             `ALUSRC1_RS1     : w_AluInput1 = w_rs1Value;
             `ALUSRC1_PC      : w_AluInput1 = w_InstructionPointer;
             `ALUSRC1_CONST_0 : w_AluInput1 = 32'd0;
-            default          : w_AluInput1 = 32'd0;
+            default          : w_AluInput1 = 32'hxxxxxxxx;
         endcase
 
         case (w_AluSource2)
             `ALUSRC2_RS2     : w_AluInput2 = w_rs2Value;
             `ALUSRC2_IMM     : w_AluInput2 = w_ImmediateData;
             `ALUSRC2_CONST_4 : w_AluInput2 = 32'd4;
-            default          : w_AluInput2 = 32'b0;
+            default          : w_AluInput2 = 32'hxxxxxxxx;
+        endcase
+
+        case (w_CsrAluSource)
+            `CSRSRC_RS1 : w_CsrInput = w_rs1Value;
+            `CSRSRC_IMM : w_CsrInput = w_ImmediateData;
         endcase
 
         case (w_WritebackSource)
-            `WBSRC_ALU   : w_WritebackValue = w_AluOutput;
-            `WBSRC_MEM   : w_WritebackValue = w_MemValue;
+            `WBSRC_ALU : w_WritebackValue = w_AluOutput;
+            `WBSRC_MEM : w_WritebackValue = w_MemValue;
+            `WBSRC_CSR : w_WritebackValue = w_CsrOutput;
+            default    : w_WritebackValue = 32'hxxxxxxxx;
         endcase
 
         o_InstructionPointer = w_InstructionPointer;

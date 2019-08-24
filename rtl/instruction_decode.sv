@@ -5,8 +5,12 @@
 `include "cpu_defs.sv"
 `include "alu_defs.sv"
 `include "opcode_defs.sv"
+`include "system_defs.sv"
+`include "register_defs.sv"
 
 // TODO: This needs better tests.
+
+// TODO: Can I split this up? I had hoped the CSR stuff would be separate.
 
 
 module instruction_decode(
@@ -23,10 +27,15 @@ module instruction_decode(
     output o_MemRead,
     output [1:0] o_AluSource1,
     output [1:0] o_AluSource2,
-    output o_WritebackSource,
+    output [1:0] o_WritebackSource,
     output [2:0] o_Funct,
     output [2:0] o_AluOp,
     output o_AluOpAlt,
+
+    output [11:0] o_CsrNumber,
+    output o_CsrAluSource,
+    output o_CsrWriteEnable,
+    output o_CsrReadEnable,
 
     // TODO: Better way to output this?
     output o_JALR,
@@ -53,6 +62,11 @@ module instruction_decode(
     // logic w_MemReadUnsigned;
     // logic [1:0] w_MemAlignment;
 
+    logic [11:0] w_CsrNumber;
+    logic w_CsrReadEnable;
+    logic w_CsrWriteEnable;
+    logic [4:0] w_CSR_uimm;
+    logic w_CsrAluSource;
 
     logic [1:0] w_AluSource1;
     logic [1:0] w_AluSource2;
@@ -60,7 +74,7 @@ module instruction_decode(
     logic w_AluOpAlt;             // ADD/SUB, SRL/SRA, etc.
 
 
-    logic w_WritebackSource;
+    logic [1:0] w_WritebackSource;
 
     logic [31:0] w_IType_Immediate;
     logic [31:0] w_SType_Immediate;
@@ -80,6 +94,10 @@ module instruction_decode(
         w_rd            = i_InstructionWord[11:7];
         w_Opcode        = i_InstructionWord[6:2];
         w_OpcodeSuffix  = i_InstructionWord[1:0];
+
+        // See RISC-V Unprivileged ISA Section 9.1
+        w_CsrNumber = i_InstructionWord[31:20];
+        w_CSR_uimm = i_InstructionWord[19:15];
 
         // See RISC-V Unprivileged ISA Figure 2.4
         w_IType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:20]};
@@ -101,9 +119,11 @@ module instruction_decode(
         w_AluOp = w_Funct3;
         w_AluOpAlt = i_InstructionWord[30];
         w_WritebackSource = `WBSRC_ALU;
-        w_Immediate = 32'x;
+        w_Immediate = 32'hxxxxxxxx;
         w_JALR = 0;
         w_IllegalInstruction = (w_OpcodeSuffix != 2'b11);
+        w_CsrReadEnable = 0;
+        w_CsrWriteEnable = 0;
 
         case (w_Opcode)
 
@@ -185,16 +205,46 @@ module instruction_decode(
             end
 
             `OPCODE_SYSTEM : begin
-                // TODO: Implement and add test for ECALL, EBREAK, and CSR instructions
-                //
-                // These are just dummy parameters to get some data out
-                // of the simulator to the C++ environment (what could be
-                // called an AEE, I guess).
-                w_RegWrite = 0;
-                w_MemWrite = 0;
+                // TODO: Optimize this?
+                w_WritebackSource = `WBSRC_CSR;
 
-                // $display("System! word=%08x", i_InstructionWord);
-                w_IllegalInstruction = 1;
+                if (w_Funct3 == `SYSTEM_FUNCT_ECALL_EBREAK) begin
+                    // ECALL and EBREAK
+                    w_RegWrite = 0;
+
+                    // TODO: Trap to exception handler
+                    w_IllegalInstruction = 1;
+                end
+                else begin
+                    // CSR instructions
+                    w_Immediate = {27'b0, w_CSR_uimm};
+                    case (w_Funct3)
+                        `SYSTEM_FUNCT_CSRRW,
+                        `SYSTEM_FUNCT_CSRRWI : begin
+                            w_CsrReadEnable = w_rd != `REG_x0;
+                            w_CsrWriteEnable = 1;
+                        end
+                        `SYSTEM_FUNCT_CSRRS,
+                        `SYSTEM_FUNCT_CSRRC,
+                        `SYSTEM_FUNCT_CSRRSI,
+                        `SYSTEM_FUNCT_CSRRCI : begin
+                            w_CsrReadEnable = 1;
+                            // NOTE: uimm and rs1 refer to the same bits,
+                            // so these can be checked together.
+                            w_CsrWriteEnable = w_rs1 != `REG_x0;
+                        end
+
+                        // TODO: Is this needed? EBREAK and ECALL won't
+                        // hit it because of the if statement. Anything
+                        // else is an invalid instruction.
+                        default : begin
+                            w_CsrReadEnable = 0;
+                            w_CsrReadEnable = 0;
+                            w_IllegalInstruction = 0;
+                        end
+                    endcase
+                    w_RegWrite = w_CsrReadEnable;
+                end
             end
 
             default : begin
@@ -231,5 +281,10 @@ module instruction_decode(
     assign o_WritebackSource = w_WritebackSource;
 
     assign o_JALR = w_JALR;
+
+    assign o_CsrNumber = w_CsrNumber;
+    assign o_CsrAluSource = w_CsrAluSource;
+    assign o_CsrWriteEnable = w_CsrWriteEnable;
+    assign o_CsrReadEnable = w_CsrReadEnable;
 
 endmodule
