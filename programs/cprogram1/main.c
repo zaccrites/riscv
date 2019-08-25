@@ -1,5 +1,6 @@
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "runtime.h"
 
@@ -25,13 +26,23 @@
 
 
 
-int factorial(int n)
+// int factorial(int n)
+// {
+//     int result;
+//     if (n <= 1) result = 1;
+//     else result = n * factorial(n - 1);
+//     printnum(result);
+//     return result;
+// }
+
+
+
+volatile uint32_t counter;
+
+
+void c_isr()
 {
-    int result;
-    if (n <= 1) result = 1;
-    else result = n * factorial(n - 1);
-    printnum(result);
-    return result;
+    counter = counter + 1;
 }
 
 
@@ -43,7 +54,13 @@ int main()
 
     // printnum(factorial(5));
     // printnum(factorial(3));
-    printnum(factorial(5));
+    // printnum(factorial(5));
+
+    counter = 0;  // TODO: Clear .bss
+    while (counter < 10)
+    {
+        printnum(counter);
+    }
 
     return 0;
 }

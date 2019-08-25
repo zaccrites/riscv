@@ -55,18 +55,15 @@ module memory(
 
     always_comb begin
         w_WriteData = i_DataIn;
-        w_ReadData = {
-            r_RAM[w_WordAddress][3],
-            r_RAM[w_WordAddress][2],
-            r_RAM[w_WordAddress][1],
-            r_RAM[w_WordAddress][0]
-        };
+
+        w_ReadData = w_MemoryWord;
+        $display("MEMORY: Reading word %08x from address %08x", w_ReadData, {16'h0000, w_WordAddress, 2'b00});
 
 
         w_Misaligned = 0;
         w_InvalidMode = 0;
-        w_ReadData = {32{1'bx}};
-        w_WriteData = {32{1'bx}};
+        w_ReadData = 32'hffffffff;
+        w_WriteData = 32'hffffffff;
         w_WriteEnable = 4'b0000;
 
         if (i_WriteEnable) begin
@@ -144,7 +141,7 @@ module memory(
         if (w_WriteEnable[0]) r_RAM[w_WordAddress][0] <= w_WriteData[7:0];
 
         if (i_WriteEnable) begin
-            $display("MEMORY: Tried to write %08x to address %08x", w_WriteData, i_Address);
+            // $display("MEMORY: Tried to write %08x to address %08x", w_WriteData, i_Address);
         end
 
         if (i_ReadEnable) begin

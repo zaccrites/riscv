@@ -13,18 +13,16 @@ _stack_start = (ORIGIN(DATA) + LENGTH(DATA) - 1) & 0xfffffff0;
 
 SECTIONS
 {
-    .vector_table :
-    {
-        . = ALIGN(4);
-        KEEP(*(.vector_table))
-        . = ALIGN(4);
-    } > INSTRUCTIONS
-
     _sitext = .;
     .text :
     {
         . = ALIGN(4);
         _stext = .;
+        . = 0x00000000;
+        KEEP(*(.reset_vector))
+        . = 0x00000080;
+        KEEP(*(.vector_table))
+        . = 0x00000100;
         *(.text)
         *(.text*)
         _etext = .;

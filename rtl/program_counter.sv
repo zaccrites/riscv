@@ -2,6 +2,8 @@
 // TODO: Add exception support
 
 `include "branch_defs.sv"
+`include "programming_defs.sv"
+
 
 module program_counter(
     input i_Clock,
@@ -34,7 +36,7 @@ module program_counter(
 
     always_ff @ (posedge i_Clock) begin
         if (i_Reset) begin
-            r_InstructionPointer <= 0;
+            r_InstructionPointer <= `RESET_VECTOR_ADDRESS;
         end
         else begin
             if (i_Jump || w_DoBranch)

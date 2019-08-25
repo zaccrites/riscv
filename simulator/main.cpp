@@ -35,7 +35,10 @@ int main(int argc, char** argv)
 
     // TODO: Wrap in class
     Vcpu cpu;
-    // RESET;
+    cpu.i_ExternalInterrupt = 0;
+    cpu.eval();
+
+    RESET;
 
     // TODO: Integrate this into the wrapper class, at least until
     // the cache is backed by a more standard RAM.
@@ -96,7 +99,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                std::cout << std::hex << word << std::endl;
+                // std::cout << std::hex << word << std::endl;
                 cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][0] = static_cast<uint8_t>(word);
                 cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][1] = static_cast<uint8_t>(word >> 8);
                 cpu.cpu__DOT__data_memory__DOT__r_RAM[address - 0x8000/4][2] = static_cast<uint8_t>(word >> 16);
@@ -105,7 +108,7 @@ int main(int argc, char** argv)
 
             address += 1;
         }
-        std::cout << "Read " << (address + 1) << " instructions from binary file." << std::endl;
+        // std::cout << "Read " << (address + 1) << " instructions from binary file." << std::endl;
 
     }
     else
@@ -117,12 +120,35 @@ int main(int argc, char** argv)
 
 
 
+    int counter = 0;
+
     bool programRunning = true;
     while (programRunning)
     {
-        TICK;
+        counter += 1;
+        cpu.i_ExternalInterrupt = counter % 100 == 0;
 
-        if (cpu.o_Syscall)
+
+        if (counter > 100)
+        {
+            programRunning = false;
+        }
+
+
+        TICK;
+        printf("PC = 0x%08x \n", cpu.o_InstructionPointer);
+        if (cpu.i_ExternalInterrupt)
+        {
+            std::cout << "  External interrupt is high!" << std::endl;
+        }
+
+        if (cpu.o_EnvironmentBreak)
+        {
+            printf("Saw EBREAK at PC=0x%08x! >> (waiting)", cpu.o_InstructionPointer);
+            std::cin.get();  // pause
+        }
+
+        if (cpu.o_EnvironmentCall)
         {
             // Get syscall number from a0 (and param from a1)
             uint32_t syscallNumber = cpu.cpu__DOT__registers__DOT__r_Registers[9];

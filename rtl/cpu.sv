@@ -1,6 +1,7 @@
 
 `include "cpu_defs.sv"
 `include "memory_defs.sv"   // TODO: Remove this, once the instruction memory is replaced.
+`include "programming_defs.sv"
 
 /* verilator lint_off UNUSED */
 
@@ -8,12 +9,18 @@ module cpu(
     input i_Clock,
     input i_Reset,
 
+    input i_ExternalInterrupt,
+
     output [31:0] o_InstructionPointer,
 
-    // For now we'll just catch an "illegal" ecall instruction
-    // to communicate with the simulator by peering into the register file.
-    output o_Syscall
+    // These should trap, but we still have to communicate with the
+    // simulator somehow.
+    output o_EnvironmentCall,
+    output o_EnvironmentBreak
 );
+
+    assign o_EnvironmentCall = w_EnvironmentCall;
+    assign o_EnvironmentBreak = w_EnvironmentBreak;
 
     logic [31:0] w_InstructionPointer;
     logic [31:0] w_InstructionWord;
@@ -54,15 +61,19 @@ module cpu(
     logic [11:0] w_CsrNumber;
     logic [31:0] w_CsrInputData;
     logic w_CsrReadEnable;
-    logic w_WriteReadEnable;
+    logic w_CsrWriteEnable;
 
 
+    logic w_DoJump;
+    logic [31:0] w_JumpAddress;
     program_counter pc (
         .i_Clock                  (i_Clock),
         .i_Reset                  (i_Reset),
-        .i_Jump                   (w_Jump),
+        // .i_Jump                   (w_DoJump),
+        .i_Jump                   (w_Jump | w_ExceptionRaised | w_ReturnFromTrap),  // TODO: This is ugly
         .i_Branch                 (w_Branch),
         .i_BranchType             (w_Funct),
+        // .i_BranchAddress          (w_JumpAddress),
         .i_BranchAddress          (w_BranchAddress),
         .i_AluZero                (w_AluZero),
         .i_AluLessThan            (w_AluLessThan),
@@ -72,7 +83,8 @@ module cpu(
 
     // Note that instruction memory can't have a bad access mode,
     // but CAN have a misaligned instruction memory access.
-    logic w1, w2;
+    logic w_InstructionAddressMisaligned;
+    logic _dummy1;
     memory instruction_memory (
         .i_Clock                  (i_Clock),
         .i_ReadEnable             (1),
@@ -83,10 +95,16 @@ module cpu(
         .o_DataOut                (w_InstructionWord)
 
         ,
-        .o_MisalignedAccess(w1),
-        .o_BadInstruction  (w2)
+        .o_MisalignedAccess(w_InstructionAddressMisaligned),
+        .o_BadInstruction  (_dummy1)
     );
 
+    // logic w_IllegalInstruction;
+    logic w_IllegalInstructionDecode;
+    logic w_Breakpoint;
+    logic w_EnvironmentCall;
+    logic w_EnvironmentBreak;
+    logic w_ReturnFromTrap;                // TODO: PC <= MEPC (+4 ?)
     instruction_decode decode (
         .i_InstructionWord        (w_InstructionWord),
         .o_ImmediateData          (w_ImmediateData),
@@ -104,13 +122,53 @@ module cpu(
         .o_Funct                  (w_Funct),
         .o_AluOp                  (w_AluOp),
         .o_AluOpAlt               (w_AluOpAlt),
-        .o_IllegalInstruction     (w_IllegalInstruction),
         .o_JALR                   (w_JALR),
+
+        .o_EnvironmentCall        (w_EnvironmentCall),
+        .o_EnvironmentBreak       (w_EnvironmentBreak),
+        .o_ReturnFromTrap         (w_ReturnFromTrap),
+        .o_IllegalInstruction     (w_IllegalInstructionDecode),
 
         .o_CsrNumber              (w_CsrNumber),
         .o_CsrAluSource           (w_CsrAluSource),
         .o_CsrReadEnable          (w_CsrReadEnable),
         .o_CsrWriteEnable         (w_CsrWriteEnable)
+    );
+
+    // TODO: Implement properly with CSRs, but I wonder if I can get
+    // exceptions working without them for now by injecting an external
+    // interrupt and responding to internal synchronous exceptions
+    // (including ECALL and EBREAK).
+    //
+    // I may still have to make mepc, mtval, etc. readable though.
+    // Certainly MRET will need to return to the value in mepc.
+    //
+    logic w_Interrupt;
+    logic w_ExceptionRaised;
+    logic [3:0] w_ExceptionCause;  // written to mcause when w_ExceptionRaised
+    exception_unit exc (
+        .i_ExternalInterrupt           (i_ExternalInterrupt),
+        .i_SoftwareInterrupt           (0),  // bit set in mip ??
+        .i_TimerInterrupt              (0),  // timer register ??
+        .i_InstructionAddressMisaligned(w_InstructionAddressMisaligned),
+        .i_InstructionAccessFault      (0),  // TODO: e.g. When reading past end of memory?
+        .i_IllegalInstruction          (w_IllegalInstruction),
+        .i_EnvironmentBreak            (w_EnvironmentBreak),
+        .i_EnvironmentCall             (w_EnvironmentCall),
+        .i_LoadAddressMisaligned       (w_LoadAddressMisaligned),
+        .i_LoadAccessFault             (0),  // TODO: e.g. When reading past end of memory?
+
+        .o_Interrupt                   (w_Interrupt),
+        .o_ExceptionRaised             (w_ExceptionRaised),
+        .o_ExceptionCause              (w_ExceptionCause)
+
+        // TODO: These should be written as bits in the MIP CSR and cleared
+        // by software as they are handled, I believe.
+        // Does this implementation lose track of interrupts not handled
+        // immediately? What about nested interrupts?
+
+        // According to Privileged Spec Table Table 3.7, only one
+        // cause is reported in mcause according to a specified order.
     );
 
     register_file registers (
@@ -124,9 +182,14 @@ module cpu(
         .o_DataOut2               (w_rs2Value)
     );
 
-    csr csr1(
+
+    logic [31:0] w_CsrOutput;
+
+    logic [31:0] w_csr_mepc;
+    csr_file CSRs (
         .i_Clock          (i_Clock),
-        .i_InputData      (w_CsrInput),
+        .i_Reset          (i_Reset),
+        .i_InputData      (w_CsrInputData),
         .i_CsrNumber      (w_CsrNumber),
 
         .i_ReadEnable (w_CsrReadEnable),
@@ -134,11 +197,12 @@ module cpu(
 
         .i_AluOp          (w_Funct),
 
-        // TODO: Use priority encoder to select incoming exception source
-        .i_ExceptionSource (0),
+        .i_ExceptionRaised             (w_ExceptionRaised),
+        .i_Interrupt                   (w_Interrupt),
+        .i_ExceptionCause              (w_ExceptionCause),
+        .i_ExceptionInstructionPointer (w_InstructionPointer),
 
-        .i_rd             (w_rd),
-
+        .o_mepc           (w_csr_mepc),
         .o_OutputData     (w_CsrOutput)
     );
 
@@ -153,7 +217,8 @@ module cpu(
         .o_Output                 (w_AluOutput)
     );
 
-    logic w3, w4;
+    logic w_LoadAddressMisaligned;
+    logic w_IllegalLoadInstruction;
     memory data_memory (
         .i_Clock                  (i_Clock),
         .i_Address                (w_AluOutput),
@@ -164,16 +229,34 @@ module cpu(
         .o_DataOut                (w_MemValue)
 
         ,
-        .o_MisalignedAccess(w3),
-        .o_BadInstruction  (w4)
+        .o_MisalignedAccess(w_LoadAddressMisaligned),
+        .o_BadInstruction  (w_IllegalLoadInstruction)
     );
 
     always_comb begin
 
-        case (w_JALR)
-            0 : w_BranchAddress = w_InstructionPointer + w_ImmediateData;
-            1 : w_BranchAddress = w_rs1Value + w_ImmediateData;
-        endcase
+        // TODO: When this is pipelined, the target address of the exception
+        // will be different depending on which instruction causes it.
+        w_IllegalInstruction = w_IllegalLoadInstruction | w_IllegalInstructionDecode;
+
+        // TODO: This seems ugly
+        // w_DoJump = w_Jump | w_ReturnFromTrap;
+        if (w_ExceptionRaised) begin
+            $display("w_BranchAddress = `INTERRUPT_VECTOR_ADDRESS;");
+            w_BranchAddress = `INTERRUPT_VECTOR_ADDRESS;
+        end
+        else if (w_ReturnFromTrap) begin
+            // $display("w_BranchAddress = w_csr_mepc;");
+            w_BranchAddress = w_csr_mepc;
+        end
+        else if (w_JALR) begin
+            // $display("w_BranchAddress = w_rs1Value + w_ImmediateData;");
+            w_BranchAddress = w_rs1Value + w_ImmediateData;
+        end
+        else begin
+            // $display("w_BranchAddress = w_InstructionPointer + w_ImmediateData;");
+            w_BranchAddress = w_InstructionPointer + w_ImmediateData;
+        end
 
         case (w_AluSource1)
             `ALUSRC1_RS1     : w_AluInput1 = w_rs1Value;
@@ -190,8 +273,8 @@ module cpu(
         endcase
 
         case (w_CsrAluSource)
-            `CSRSRC_RS1 : w_CsrInput = w_rs1Value;
-            `CSRSRC_IMM : w_CsrInput = w_ImmediateData;
+            `CSRSRC_RS1 : w_CsrInputData = w_rs1Value;
+            `CSRSRC_IMM : w_CsrInputData = w_ImmediateData;
         endcase
 
         case (w_WritebackSource)
@@ -201,11 +284,8 @@ module cpu(
             default    : w_WritebackValue = 32'hxxxxxxxx;
         endcase
 
-        o_InstructionPointer = w_InstructionPointer;
-
-        // TODO: Remove this!
-        o_Syscall = w_IllegalInstruction;
-
     end
+
+    assign o_InstructionPointer = w_InstructionPointer;
 
 endmodule

@@ -207,7 +207,7 @@ def verilate_source_files(args):
 def get_verilog_defines(args):
     output_dir = f'{args.verilator_output_dir}_defines'
     verilator_args = [
-        '-E', '--dump-defines',
+        '-E', '--dump-defines', '--lint-only',
         *[f'-I{path}' for path in args.verilog_include_paths],
         args.verilog_module,
     ]

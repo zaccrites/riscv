@@ -40,9 +40,13 @@ module instruction_decode(
     // TODO: Better way to output this?
     output o_JALR,
 
+    output o_EnvironmentCall,
+    output o_EnvironmentBreak,
+    output o_ReturnFromTrap,
     output o_IllegalInstruction
 
 );
+    logic [11:0] w_Funct12;
     logic [2:0] w_Funct3;
     logic [4:0] w_rs2;
     logic [4:0] w_rs1;
@@ -84,10 +88,18 @@ module instruction_decode(
     logic [31:0] w_Immediate;
 
     logic w_IllegalInstruction;
+    logic w_EnvironmentCall;
+    logic w_EnvironmentBreak;
+    logic w_ReturnFromTrap;
+
 
     logic w_JALR;
 
     always_comb begin
+
+        $display("DECODING instruction %08x", i_InstructionWord);
+
+        w_Funct12       = i_InstructionWord[31:20];
         w_rs2           = i_InstructionWord[24:20];
         w_rs1           = i_InstructionWord[19:15];
         w_Funct3        = i_InstructionWord[14:12];
@@ -122,8 +134,18 @@ module instruction_decode(
         w_Immediate = 32'hxxxxxxxx;
         w_JALR = 0;
         w_IllegalInstruction = (w_OpcodeSuffix != 2'b11);
+
         w_CsrReadEnable = 0;
         w_CsrWriteEnable = 0;
+        w_CsrAluSource = `CSRSRC_RS1;
+
+        // TODO: I am concerned that some of these are getting inferred as
+        // latches by Verilator if the default value isn't assigned at the
+        // top, since the value isn't set in all branches.
+        w_EnvironmentBreak = 0;
+        w_EnvironmentCall = 0;
+        w_ReturnFromTrap = 0;             //  Like this one! After the first MRET it was like ALL instructions were returning from a trap?
+        // Is there a way to get Verilator to warn about this for always_comb? Yosys? Vivado?
 
         case (w_Opcode)
 
@@ -207,49 +229,59 @@ module instruction_decode(
             `OPCODE_SYSTEM : begin
                 // TODO: Optimize this?
                 w_WritebackSource = `WBSRC_CSR;
+                w_Immediate = {27'b0, w_CSR_uimm};
 
-                if (w_Funct3 == `SYSTEM_FUNCT_ECALL_EBREAK) begin
-                    // ECALL and EBREAK
-                    w_RegWrite = 0;
-
-                    // TODO: Trap to exception handler
-                    w_IllegalInstruction = 1;
+                if (w_Funct12 == `SYSTEM_FUNCT_ECALL) begin
+                    w_EnvironmentCall = 1;
                 end
-                else begin
-                    // CSR instructions
-                    w_Immediate = {27'b0, w_CSR_uimm};
-                    case (w_Funct3)
-                        `SYSTEM_FUNCT_CSRRW,
-                        `SYSTEM_FUNCT_CSRRWI : begin
-                            w_CsrReadEnable = w_rd != `REG_x0;
-                            w_CsrWriteEnable = 1;
-                        end
-                        `SYSTEM_FUNCT_CSRRS,
-                        `SYSTEM_FUNCT_CSRRC,
-                        `SYSTEM_FUNCT_CSRRSI,
-                        `SYSTEM_FUNCT_CSRRCI : begin
-                            w_CsrReadEnable = 1;
-                            // NOTE: uimm and rs1 refer to the same bits,
-                            // so these can be checked together.
-                            w_CsrWriteEnable = w_rs1 != `REG_x0;
-                        end
-
-                        // TODO: Is this needed? EBREAK and ECALL won't
-                        // hit it because of the if statement. Anything
-                        // else is an invalid instruction.
-                        default : begin
-                            w_CsrReadEnable = 0;
-                            w_CsrReadEnable = 0;
-                            w_IllegalInstruction = 0;
-                        end
-                    endcase
-                    w_RegWrite = w_CsrReadEnable;
+                else if (w_Funct12 == `SYSTEM_FUNCT_EBREAK) begin
+                    w_EnvironmentBreak = 1;
                 end
+                else if (w_Funct12 == `SYSTEM_FUNCT_MRET) begin
+                    // TODO: SRET and URET
+                    w_ReturnFromTrap = 1;
+                end
+                else case (w_Funct3)
+
+                    `SYSTEM_FUNCT_CSRRW : begin
+                        w_CsrReadEnable = w_rd != `REG_x0;
+                        w_CsrWriteEnable = 1;
+                        w_CsrAluSource = `CSRSRC_RS1;
+                    end
+                    `SYSTEM_FUNCT_CSRRWI : begin
+                        w_CsrReadEnable = w_rd != `REG_x0;
+                        w_CsrWriteEnable = 1;
+                        w_CsrAluSource = `CSRSRC_IMM;
+                    end
+
+                    `SYSTEM_FUNCT_CSRRS,
+                    `SYSTEM_FUNCT_CSRRC : begin
+                        w_CsrReadEnable = 1;
+                        // NOTE: uimm and rs1 refer to the same bits,
+                        // so these can be checked together.
+                        w_CsrWriteEnable = w_rs1 != `REG_x0;
+                        w_CsrAluSource = `CSRSRC_RS1;
+                    end
+                    `SYSTEM_FUNCT_CSRRSI,
+                    `SYSTEM_FUNCT_CSRRCI : begin
+                        w_CsrReadEnable = 1;
+                        // NOTE: uimm and rs1 refer to the same bits,
+                        // so these can be checked together.
+                        w_CsrWriteEnable = w_rs1 != `REG_x0;
+                        w_CsrAluSource = `CSRSRC_IMM;
+                    end
+
+                    default: begin
+                        $display("Unimplemented SYSTEM instruction: %08x", i_InstructionWord);
+                        w_CsrReadEnable = 0;
+                        w_CsrWriteEnable = 0;
+                        w_IllegalInstruction = 1;
+                    end
+                endcase
             end
 
             default : begin
-                // Unimplemented or illegal instruction
-                $display("Unimplemented! word=%08x", i_InstructionWord);
+                $display("Unimplemented or illegal instruction: %08x", i_InstructionWord);
                 w_IllegalInstruction = 1;
             end
 
@@ -286,5 +318,9 @@ module instruction_decode(
     assign o_CsrAluSource = w_CsrAluSource;
     assign o_CsrWriteEnable = w_CsrWriteEnable;
     assign o_CsrReadEnable = w_CsrReadEnable;
+
+    assign o_EnvironmentCall = w_EnvironmentCall;
+    assign o_EnvironmentBreak = w_EnvironmentBreak;
+    assign o_ReturnFromTrap = w_ReturnFromTrap;
 
 endmodule

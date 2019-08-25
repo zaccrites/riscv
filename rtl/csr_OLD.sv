@@ -1,7 +1,8 @@
 
+`include "csr_defs.sv"
 
 
-module csr(
+module csr_file (
     input i_Clock,
 
     input [2:0] i_AluOp,
@@ -27,20 +28,20 @@ module csr(
 
 
     // TODO: What to do about these registers written by the machine itself?
-    input i_mepc_WriteEnable;
-    input [31:0] i_mepc;
+    input i_mepc_WriteEnable,
+    input [31:0] i_mepc,
 
 
 
     output [31:0] o_OutputData
 );
 
-    logic [31:0] r_mtvec;  // Machine trap-vector base-address register
-    logic [31:0] r_mip;  // Machine interrupts pending
+    // logic [31:0] r_mip;  // Machine interrupts pending
     logic [31:0] r_mie;  // Machine interrupt enable
     logic [31:0] r_mscratch;  // Machine scratch register
     logic [31:0] r_mepc;  // Machine exception program counter
-
+    logic [31:0] r_mcause;
+    logic [31:0] r_mtval;
 
 
     // Only raise an invalid access exception if read enabled.
@@ -82,7 +83,7 @@ module csr(
             `CSR_NUM_MEPC : w_CsrOldValue = r_mepc;
             `CSR_NUM_MCAUSE : w_CsrOldValue = r_mcause;
             `CSR_NUM_MTVAL : w_CsrOldValue = r_mtval;
-            `CSR_NUM_MIP : w_CsrOldValue = r_mip;
+            // `CSR_NUM_MIP : w_CsrOldValue = r_mip;
 
 
         endcase
