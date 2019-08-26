@@ -1,7 +1,7 @@
 
 # RISC-V CPU Core
 
-A single-cycle RV32I CPU core
+A pipelined RV32I CPU core
 
 
 # Getting Started

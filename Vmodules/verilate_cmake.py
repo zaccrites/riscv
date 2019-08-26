@@ -296,11 +296,24 @@ def main():
         exc.print_stderr()
         print(f'ERROR: Verilator exited with status {exc.status}', file=sys.stderr)
 
+    def get_depfile():
+        depfile = Depfile.parse(args, module_name)
+        depfile.outputs.add(defines_header_path)
+        depfile.depends.add(__file__)
+        return depfile
+
+    try:
+        previous_depfile = get_depfile()
+    except FileNotFoundError:
+        previous_depfile = None
+
+    try:
+        verilate_source_files(args)
+    except VerilatorError as exc:
+        handle_verilator_error(exc)
+        return 1
+
     # TODO: Don't always regenerate this file
-    # TODO: You have to run this BEFORE running the main Verilator call
-    # or it overwrites the .d file. I kind of hate this. Can I just have
-    # it write to a separate directory and then write the resulting _defines.h
-    # file to the original directory instead?
     try:
         verilog_defines = get_verilog_defines(args)
     except VerilatorError as exc:
@@ -313,19 +326,6 @@ def main():
     )
     with open(os.path.join(args.verilator_output_dir, f'V{module_name}_defines.h'), 'w') as f:
         f.write(content)
-
-    def get_depfile():
-        depfile = Depfile.parse(args, module_name)
-        depfile.outputs.add(defines_header_path)
-        depfile.depends.add(__file__)
-        return depfile
-
-    previous_depfile = get_depfile()
-    try:
-        verilate_source_files(args)
-    except VerilatorError as exc:
-        handle_verilator_error(exc)
-        return 1
 
     if args.cmake_module_path is not None:
         depfile = get_depfile()

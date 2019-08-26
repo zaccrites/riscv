@@ -1,52 +1,35 @@
 
-// TODO: Add exception support
-
-`include "branch_defs.sv"
-`include "programming_defs.sv"
+`include "programming.svh"
 
 
-module program_counter(
+module program_counter (
     input i_Clock,
     input i_Reset,
 
-    input i_Jump,
-    input i_Branch,
-    input [2:0] i_BranchType,
-    input [31:0] i_BranchAddress,
-    input i_AluZero,
-    input i_AluLessThan,
-    input i_AluLessThanUnsigned,
+    // input
 
-    output [31:0] o_InstructionPointer
+    output [31:0] o_PC,
+    output [31:0] o_NextPC
 );
 
-    logic [31:0] r_InstructionPointer;
+logic [31:0] r_PC;
+assign o_PC = r_PC;
 
-    logic w_DoBranch;
-    always_comb begin
-        w_DoBranch = i_Branch && (
-            (i_BranchType == `BRANCH_EQ && i_AluZero) ||
-            (i_BranchType == `BRANCH_NE && ! i_AluZero) ||
-            (i_BranchType == `BRANCH_LT && i_AluLessThan) ||
-            (i_BranchType == `BRANCH_GE && ! i_AluLessThan) ||
-            (i_BranchType == `BRANCH_LTU && i_AluLessThanUnsigned) ||
-            (i_BranchType == `BRANCH_GEU && ! i_AluLessThanUnsigned)
-        );
+
+logic [31:0] w_NextPC;
+assign w_NextPC = r_PC + 4;
+assign o_NextPC = w_NextPC;
+
+
+always_ff @ (posedge i_Clock) begin
+    if (i_Reset) begin
+        r_PC <= `RESET_VECTOR_ADDRESS;
     end
-
-    always_ff @ (posedge i_Clock) begin
-        if (i_Reset) begin
-            r_InstructionPointer <= `RESET_VECTOR_ADDRESS;
-        end
-        else begin
-            if (i_Jump || w_DoBranch)
-                r_InstructionPointer <= i_BranchAddress;
-            else begin
-                r_InstructionPointer <= r_InstructionPointer + 4;
-            end
-        end
+    else begin
+        r_PC <= w_NextPC;  // TODO: Branches
     end
+end
 
-    assign o_InstructionPointer = r_InstructionPointer;
+
 
 endmodule

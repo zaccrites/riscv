@@ -18,11 +18,11 @@ SECTIONS
     {
         . = ALIGN(4);
         _stext = .;
-        . = 0x00000000;
+/*        . = 0x00000000;
         KEEP(*(.reset_vector))
         . = 0x00000080;
         KEEP(*(.vector_table))
-        . = 0x00000100;
+        . = 0x00000100;*/
         *(.text)
         *(.text*)
         _etext = .;
