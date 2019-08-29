@@ -1,0 +1,32 @@
+
+Next Steps:
+
+* Fix memory read/write problems
+* Fix/expand unit tests?
+* Clean up simulator code
+* Add SYSTEM instructions (any others missing?)
+* Add CSR instructions and exceptions
+
+* Pipeline the CPU!
+    - Does this solve the "synchronous memory" issue?
+      Do I need to register the memory unit outputs?
+
+* Implement caches and C++ "main memory"
+
+...
+
+* Implement C++ "disk" and SPI interface
+
+
+
+
+
+Other issues:
+
+- When I refactored the `define includes and removed cpudefs.sv,
+  Ninja complained about it missing and not being able to build
+  Vmodule cmake files which depended on it. I would like the
+  system to be able to recover from a situation like that, if possible.
+
+- Adding the step to dump `defines effectively doubles Verilation time.
+  Is there a smarter way to do this?
