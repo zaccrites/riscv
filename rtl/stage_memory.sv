@@ -3,10 +3,16 @@ module stage_memory (
     input i_Clock,
     input i_Reset,
 
+    // Passthrough signals
+    input i_WritebackSrc,
+    //
+    output o_WritebackSrc,
+
+
     input i_MemWrite,
 
     input [31:0] i_AluOutput,
-    input [31:0] i_Reg2Value,
+    input [31:0] i_Rs2Value,
 
     input i_RegWrite,
     output o_RegWrite,

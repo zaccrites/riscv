@@ -293,6 +293,7 @@ def main():
     environment = jinja2.Environment(undefined=jinja2.StrictUndefined)
 
     def handle_verilator_error(exc):
+        print(' '.join(exc.cmd))
         exc.print_stderr()
         print(f'ERROR: Verilator exited with status {exc.status}', file=sys.stderr)
 

@@ -1,0 +1,11 @@
+
+Backlog of unfinished features or known issues.
+
+- FENCE instruction
+- CSRs and exceptions
+- Illegal function modes for e.g. LOAD instructions are not verified
+  by the control unit during instruction decode.
+
+
+- Create script to run Dhrystone on various microarchitectures
+  to see how changes improve or hurt performance.
