@@ -9,3 +9,12 @@ Backlog of unfinished features or known issues.
 
 - Create script to run Dhrystone on various microarchitectures
   to see how changes improve or hurt performance.
+
+
+- Create script or makefile to invoke Vivado using Tcl non-project mode
+  (or project mode, whatever makes most sense-- just no GUI)
+
+  https://www.reddit.com/r/FPGA/comments/9l01xe/have_you_learned_or_tried_to_learn_tcl/
+  https://www.reddit.com/r/FPGA/comments/afv2o3/create_a_vivado_project_and_generate_bitstream/
+  https://www.reddit.com/r/FPGA/comments/aknl8r/vivado_nonproject_mode_releasing_vivados_true/
+  https://www.reddit.com/r/FPGA/comments/9gtxow/impress_your_new_boss_through_fpga_design_flow/
