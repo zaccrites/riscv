@@ -1,4 +1,7 @@
 
+`include "pipeline_signals.svh"
+
+
 module stage_instruction_fetch (
     input i_Clock,
     input i_Reset,
@@ -7,12 +10,15 @@ module stage_instruction_fetch (
     // on branch misprediction.
     // verilator lint_off UNUSED
     input [31:0] i_BranchTarget,
+    // input IF_Feedback_Signals_t i_BranchTarget,
     // verilator lint_on UNUSED
 
     output [31:0] o_PC,
     output [31:0] o_NextPC,
     output [31:0] o_InstructionWord,
+    // output IF_Output_Signals_t o_
 
+    // TODO: Exceptions
     output o_InstructionAddressMisaligned
 );
 

@@ -1,25 +1,37 @@
 
+`include "pipeline_signals.svh"
+
+
 module stage_execution (
     input i_Clock,
     input i_Reset,
 
-    input [1:0] i_AluSource1,
-    input [1:0] i_AluSource2,
+
+    input EX_Control_t i_EX_Control,
+    input MEM_Control_t i_MEM_Control,
+    input WB_Control_t i_WB_Control,
+
+    output MEM_Control_t o_MEM_Control,
+    output WB_Control_t o_WB_Control
 
 
-    // For forwarding
-    input [31:0] i_WritebackValue,
-    input i_rs1,
-    input i_rs2,
-    input i_EX_MEM_rd,
-    input i_MEM_WB_rd,
+    // input [1:0] i_AluSource1,
+    // input [1:0] i_AluSource2,
 
 
-    input i_MemRead,
-    input i_MemWrite,
+    // // For forwarding
+    // input [31:0] i_WritebackValue,
+    // input i_rs1,
+    // input i_rs2,
+    // input i_EX_MEM_rd,
+    // input i_MEM_WB_rd,
 
-    output o_MemRead,
-    output o_MemWrite
+
+    // input i_MemRead,
+    // input i_MemWrite,
+
+    // output o_MemRead,
+    // output o_MemWrite
 
 );
 
@@ -61,13 +73,13 @@ module stage_execution (
 
     always_ff @ (posedge i_Clock) begin
         if (i_Reset) begin
-            // Reset control signals
-            o_MemRead <= 0;
-            o_MemWrite <= 0;
+            o_MEM_Control.MemRead <= 0;
+            o_MEM_Control.MemWrite <= 0;
+            o_WB_Control.RegWrite <= 0;
         end
         else begin
-            o_MemRead <= i_MemRead;
-            o_MemWrite <= i_MemWrite;
+            o_MEM_Control <= i_MEM_Control;
+            o_WB_Control <= i_WB_Control;
         end
     end
 

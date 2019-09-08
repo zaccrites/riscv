@@ -1,7 +1,7 @@
 
 # RISC-V CPU Core
 
-A pipelined RV32I CPU core
+A scalar, in-order, single-issue, pipelined RV32I CPU core
 
 
 # Getting Started

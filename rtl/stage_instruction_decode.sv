@@ -1,4 +1,7 @@
 
+`include "pipeline_signals.svh"
+
+
 module stage_instruction_decode (
     input i_Clock,
     input i_Reset,
@@ -10,54 +13,45 @@ module stage_instruction_decode (
 
 
 
-    output [4:0] o_rs1,
-    output [4:0] o_rs2,
-    output [4:0] o_rd,
-
     // These are sent back from the WB stage.
-    input i_RegWrite,
-    input [4:0] i_rd,
-    input [31:0] i_WritebackValue,
+    input WritebackSignals_t i_WritebackSignals,
 
 
-    output [1:0] o_AluSrc1,
-    output [1:0] o_AluSrc2,
-    output o_WritebackSrc,
+    // output [1:0] o_AluSrc1,
+    // output [1:0] o_AluSrc2,
+    // output o_WritebackSrc,
 
     output o_IllegalInstruction,
 
+    // output [31:0] o_rs1Value,
+    // output [31:0] o_rs2Value,
+    // output [31:0] o_Immediate,
+
+    output ID_IF_Control_t o_ID_IF_Control,
+    output EX_Control_t o_EX_Control,
+    output MEM_Control_t o_MEM_Control,
+    output WB_Control_t o_WB_Control,
+    output RegisterIDs_t o_RegisterIDs,
+
+    output [31:0] o_Immediate,
     output [31:0] o_rs1Value,
     output [31:0] o_rs2Value,
-    output [31:0] o_Immediate,
-
-    output o_MemRead,
-    output o_MemWrite,
-    output o_RegWrite,
-
-    // output o_Jump,
-    // output o_Branch,
-    // output o_JALR,
 
     // TODO: Remove this
-    output o_EnvCall,
-
-    output [2:0] o_Function,
-    output [2:0] o_AluOp,
-    output o_AluOpAlt
+    output o_EnvCall
 );
+
+
+
+    EX_Control_t w_EX_Control;
+    MEM_Control_t w_MEM_Control;
+    WB_Control_t w_WB_Control;
+
+    RegisterIDs_t w_RegisterIDs;
+
 
     logic [31:0] w_Immediate;
 
-    logic w_MemWrite;
-    logic w_MemRead;
-    logic w_RegWrite;
-
-    logic w_Jump;
-    logic w_JALR;
-    logic w_Branch;
-    logic [2:0] w_Function;
-    logic [2:0] w_AluOp;
-    logic w_AluOpAlt;
 
     // TODO: Implement exceptions
     //
@@ -70,100 +64,64 @@ module stage_instruction_decode (
     //
     // verilator lint_on UNUSED
 
-    logic w_WritebackSrc;
-    logic [1:0] w_AluSrc1;
-    logic [1:0] w_AluSrc2;
-
-
-    logic [4:0] w_rs1;
-    logic [4:0] w_rs2;
-    logic [4:0] w_rd;
-
     logic w_IllegalInstruction;
     assign o_IllegalInstruction = w_IllegalInstruction;
+
 
     decode_unit decode (
         .i_InstructionWord      (i_InstructionWord),
 
-        .o_rs1                  (w_rs1),
-        .o_rs2                  (w_rs2),
-        .o_rd                   (w_rd),
 
-        .o_WritebackSrc      (w_WritebackSrc),
+        .o_ID_IF_Control     (o_ID_IF_Control),
+        .o_EX_Control        (w_EX_Control),
+        .o_MEM_Control       (w_MEM_Control),
+        .o_WB_Control        (w_WB_Control),
+        .o_RegisterIDs       (w_RegisterIDs),
+
         .o_Immediate         (w_Immediate),
 
-        .o_MemWrite             (w_MemWrite),
-        .o_RegWrite             (w_RegWrite),
-        .o_Function             (w_Function),
-        .o_Jump                 (w_Jump),
-        .o_Branch               (w_Branch),
-        .o_JALR                 (w_JALR),
-        .o_AluSrc1              (w_AluSrc1),
-        .o_AluOp                (w_AluOp),
-        .o_AluSrc2              (w_AluSrc2),
         .o_EnvBreak             (w_EnvBreak),
         .o_EnvCall              (w_EnvCall),
-        .o_MemRead              (w_MemRead),
-        .o_IllegalInstruction   (w_IllegalInstruction),
-        .o_AluOpAlt             (w_AluOpAlt)
+        .o_IllegalInstruction   (w_IllegalInstruction)
+
+
     );
 
     register_file registers (
         .i_Clock         (i_Clock),
-        .i_DataIn        (i_WritebackValue),
-        .i_WriteEnable   (i_RegWrite),
-        .i_RegDest       (i_rd),
-        .i_RegSource1    (w_rs1),
-        .i_RegSource2    (w_rs2),
+        .i_DataIn        (i_WritebackSignals.Value),
+        .i_WriteEnable   (i_WritebackSignals.RegWrite),
+        .i_RegDest       (i_WritebackSignals.rd),
+        .i_RegSource1    (w_RegisterIDs.rs1),
+        .i_RegSource2    (w_RegisterIDs.rs2),
         .o_DataOut1      (o_rs1Value),
         .o_DataOut2      (o_rs2Value)
     );
 
     always_ff @ (posedge i_Clock) begin
         if (i_Reset) begin
-            o_MemRead <= 0;
-            o_MemWrite <= 0;
-            o_RegWrite <= 0;
+            o_MEM_Control.MemRead <= 0;
+            o_MEM_Control.MemWrite <= 0;
+            o_WB_Control.RegWrite <= 0;
         end
         else begin
-            o_MemWrite <= w_MemWrite;
-            o_MemRead <= w_MemRead;
-            o_RegWrite <= w_RegWrite;
+            o_MEM_Control <= w_MEM_Control;
+            o_EX_Control <= w_EX_Control;
+            o_WB_Control <= w_WB_Control;
+            o_RegisterIDs <= w_RegisterIDs;
 
-            o_AluSrc1 <= w_AluSrc1;
-            o_AluSrc2 <= w_AluSrc2;
-            o_WritebackSrc <= w_WritebackSrc;
-
-            o_rs1 <= w_rs1;
-            o_rs2 <= w_rs2;
-            o_rd <= w_rd;
-
+            // NOTE: Register outputs are already updated synchronously
             o_Immediate <= w_Immediate;
 
             // TODO: Implement branching
-            // o_Jump <= w_Jump;
-            // o_JALR <= w_JALR;
-            // o_Branch <= w_Branch;
             o_BranchTarget <= i_NextPC;
-
-
-            o_Function <= w_Function;
-            o_AluOp <= w_AluOp;
-            o_AluOpAlt <= w_AluOpAlt;
-
 
             // TODO: Implement exception trapping
             // o_EnvBreak <= w_EnvBreak;
             // o_IllegalInstruction <= w_IllegalInstruction
             o_EnvCall <= w_EnvCall;
 
-
-
-
         end
     end
-
-
-
 
 endmodule

@@ -1,11 +1,18 @@
 
+`include "pipeline_signals.svh"
+
+
 module cpu (
     input i_Clock,
     input i_Reset,
 
-    // TODO: Remove this
+    // TODO: Remove these
     output [31:0] o_PC,
-    output [31:0] o_InstructionWord
+    output [31:0] o_InstructionWord,
+    //
+    output o_IllegalInstruction,
+    output o_EnvCall
+
 );
 
 
@@ -31,65 +38,53 @@ stage_instruction_fetch stage_IF (
 
 
 logic [31:0] w_BranchTarget;
-logic w_ID_EX_MemWrite;
-logic [4:0] w_ID_EX_rs1;
-logic [4:0] w_ID_EX_rs2;
-logic [4:0] w_ID_EX_rd;
-logic w_ID_EX_EnvCall;                      // REMOVE ME
 
-logic [31:0] w_ID_EX_rs1Value;
-logic [31:0] w_ID_EX_rs2Value;
-logic [31:0] w_ID_EX_Immediate;
-logic w_ID_EX_MemWrite;
-logic w_ID_EX_MemRead;
-// logic w_ID_EX_
 
-// TODO: Can I use a SystemVerilog interfaces to reduce the amount of
-// pipeline register name prefixing and typing?
+ID_IF_Control_t w_ID_IF_Control;     // TODO: could use better name
+EX_Control_t w_ID_EX_Control;
+MEM_Control_t w_ID_MEM_Control;
+WB_Control_t w_ID_WB_Control;
+RegisterIDs_t w_ID_RegisterIDs;
+
+logic [31:0] w_ID_rs1Value;
+logic [31:0] w_ID_rs2Value;
+logic [31:0] w_ID_Immediate;
+
+
+
+// TODO
+WritebackSignals_t w_WritebackSignals;
+assign w_WritebackSignals.RegWrite = 0;
+assign w_WritebackSignals.Value = 0;
+assign w_WritebackSignals.rd = 0;
+
+
 
 stage_instruction_decode stage_ID (
+    .i_Clock             (i_Clock),
+    .i_Reset             (i_Reset),
 
-    .o_WritebackSrc      (o_WritebackSrc),
-    .o_AluSrc1           (o_AluSrc1),
-    .o_AluSrc2           (o_AluSrc2),
-    .o_IllegalInstruction(o_IllegalInstruction),
-    .o_rs1Value          (w_ID_EX_rs1Value),
-    .o_rs2Value          (w_ID_EX_rs2Value),
-    .o_Immediate         (w_ID_EX_Immediate),
-    .o_MemRead           (o_MemRead),
-    .o_RegWrite          (o_RegWrite),
-    .o_Function          (o_Function),
-    .o_AluOp             (o_AluOp),
-    .o_AluOpAlt          (o_AluOpAlt),
-
-
-
-    .i_Clock       (i_Clock),
-    .i_Reset       (i_Reset),
-    .o_MemWrite    (w_ID_EX_MemWrite),
-
-    .o_BranchTarget(w_BranchTarget),
-
-    .i_InstructionWord   (w_IF_ID_InstructionWord),
     .i_NextPC            (w_IF_ID_NextPC),
+    .i_InstructionWord   (w_IF_ID_InstructionWord),
+    .i_WritebackSignals  (w_WritebackSignals),
 
-    // .o_BranchTarget      (o_BranchTarget),
+    .o_BranchTarget      (w_BranchTarget),
 
-    .o_rs1               (w_ID_EX_rs1),
-    .o_rs2               (w_ID_EX_rs2),
-    .o_rd                (w_ID_EX_rd),
+    .o_ID_IF_Control     (w_ID_IF_Control),
+    .o_EX_Control        (w_ID_EX_Control),
+    .o_MEM_Control       (w_ID_MEM_Control),
+    .o_WB_Control        (w_ID_WB_Control),
+    .o_RegisterIDs       (w_ID_RegisterIDs),
 
-    .i_RegWrite (w_WB_RegWrite),
-    .i_rd                (w_WB_rd),
-    .i_WritebackValue    (w_WritebackValue),
-
-
-
-
+    .o_rs1Value          (w_ID_rs1Value),
+    .o_rs2Value          (w_ID_rs2Value),
+    .o_Immediate         (w_ID_Immediate),
 
 
+    // TODO: Remove these
+    .o_IllegalInstruction(o_IllegalInstruction),
+    .o_EnvCall           (o_EnvCall)
 
-    .o_EnvCall           (w_ID_EX_EnvCall)
 );
 
 
@@ -102,6 +97,12 @@ logic [31:0] w_WritebackValue = 32'hdeadbeef;
 
 
 
+MEM_Control_t w_EX_MEM_Control;
+WB_Control_t w_EX_WB_Control;
+
+
+
+
 /*
 logic w_EX_MEM_MemWrite;
 stage_execution stage_EX (
@@ -110,8 +111,13 @@ stage_execution stage_EX (
     .i_MemWrite(w_ID_EX_MemWrite),
     .o_MemWrite(w_EX_MEM_MemWrite)
 );
+*/
 
 
+
+WB_Control_t w_MEM_WB_Control;
+
+/*
 logic w_MEM_WB_RegWrite;
 logic w_MEM_WB_WritebackSrc;
 stage_memory stage_MEM (

@@ -183,7 +183,7 @@ def run_verilator(verilator_args, output_dir):
     except FileExistsError:
         pass
 
-    cmd = ['verilator_bin', *verilator_args, '--Mdir', output_dir]
+    cmd = ['verilator_bin', *verilator_args, '--MMD', '--Mdir', output_dir]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
     stdout = stdout.decode('utf-8')
@@ -197,7 +197,9 @@ def run_verilator(verilator_args, output_dir):
 def verilate_source_files(args):
     output_dir = args.verilator_output_dir
     verilator_args = [
-        '-Wall', '-cc', '--MMD',
+        '-Wall',
+        '-Werror-implicit',
+        '-Werror-pinmissing',
         *[f'-I{path}' for path in args.verilog_include_paths],
         '-cc', args.verilog_module,
     ]
