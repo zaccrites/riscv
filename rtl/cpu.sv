@@ -109,6 +109,7 @@ logic [31:0] w_WritebackValue = 32'hdeadbeef;
 
 MEM_Control_t w_EX_MEM_Control;
 WB_Control_t w_EX_WB_Control;
+RegisterIDs_t w_EX_RegisterIDs;
 
 logic [31:0] w_EX_AluOutput;
 logic [31:0] w_EX_rs2Value;
@@ -131,6 +132,7 @@ stage_execution stage_EX (
 
     .o_MEM_Control(w_EX_MEM_Control),
     .o_WB_Control (w_EX_WB_Control),
+    .o_RegisterIDs (w_EX_RegisterIDs),
 
     .o_AluOutput  (w_EX_AluOutput),
     .o_rs2Value   (w_EX_rs2Value)
@@ -139,23 +141,36 @@ stage_execution stage_EX (
 
 
 
-WB_Control_t w_MEM_WB_Control;
+logic w_MEM_DataAddressMisaligned;
 
-/*
-logic w_MEM_WB_RegWrite;
-logic w_MEM_WB_WritebackSrc;
+WB_Control_t w_MEM_WB_Control;
+RegisterIDs_t w_MEM_RegisterIDs;
+
+logic [31:0] w_MEM_AluOutput;
+logic [31:0] w_MEM_MemoryValue;
+
 stage_memory stage_MEM (
     .i_Clock     (i_Clock),
     .i_Reset     (i_Reset),
 
-    .i_MemWrite  (w_EX_MEM_MemWrite)
+    .i_AluOutput  (w_EX_AluOutput),
+    .o_AluOutput  (w_MEM_AluOutput),
 
-    .o_RegWrite  (w_MEM_WB_RegWrite)
-    .o_WritebackSrc (w_MEM_WB_WritebackSrc)
-    .i_WritebackSrc(w_EX_MEM_WritebackSrc)
+    .o_MemoryValue(w_MEM_MemoryValue),
+
+    .i_MEM_Control(w_EX_MEM_Control),
+    .i_WB_Control (w_EX_WB_Control),
+
+    .i_rs2Value   (w_EX_rs2Value),
+    .i_RegisterIDs(w_EX_RegisterIDs),
+    .o_RegisterIDs     (w_MEM_RegisterIDs),
+
+    .o_WB_Control (w_MEM_WB_Control),
+    .o_MisalignedAccess(w_MEM_DataAddressMisaligned)
 );
 
 
+/*
 logic w_RegWrite;
 logic w_WritebackValue;
 stage_writeback stage_WB (

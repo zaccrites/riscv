@@ -41,6 +41,7 @@ module instruction_cache (
 
     always_ff @ (posedge i_Clock) begin
         if (i_Reset) begin
+            // TODO: Invalidate cache entries
             // o_DataValid <= 0;
             o_DataOut <= 32'h00000000;
         end

@@ -24,6 +24,7 @@ module stage_execution (
 
     output MEM_Control_t o_MEM_Control,
     output WB_Control_t o_WB_Control,
+    output RegisterIDs_t o_RegisterIDs,
 
     output [31:0] o_AluOutput,
     output [31:0] o_rs2Value
@@ -95,6 +96,7 @@ module stage_execution (
         else begin
             o_MEM_Control <= i_MEM_Control;
             o_WB_Control <= i_WB_Control;
+            o_RegisterIDs <= i_RegisterIDs;
 
             o_AluOutput <= w_AluOutput;
             o_rs2Value <= i_rs2Value;

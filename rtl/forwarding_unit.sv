@@ -26,6 +26,12 @@ module forwarding_unit (
 );
 
 
+    // TODO: I *may* have to rename some signals, since what I'm
+    // calling e.g. "MEM_RegisterIDs" is actually the synchronously
+    // set pipeline register output from the MEM stage, rather than
+    // the one acctually "used" in the MEM stage.
+
+
     always_comb begin
 
         // The synchronous data memory may complicate forwarding.
