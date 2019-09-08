@@ -198,6 +198,7 @@ def verilate_source_files(args):
     output_dir = args.verilator_output_dir
     verilator_args = [
         '-Wall',
+        '-Werror-width',
         '-Werror-implicit',
         '-Werror-pinmissing',
         *[f'-I{path}' for path in args.verilog_include_paths],

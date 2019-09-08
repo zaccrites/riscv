@@ -16,23 +16,30 @@ module cpu (
 );
 
 
+assign o_PC = w_IF_PC;
+assign o_InstructionWord = w_IF_InstructionWord;
+
+
+
+
+// TODO: Remove this once all stages are added
 // verilator lint_off UNUSED
 
 
-logic [31:0] w_IF_ID_PC;
-logic [31:0] w_IF_ID_NextPC;
-logic [31:0] w_IF_ID_InstructionWord;
-logic w_IF_ID_InstructionAddressMisaligned;
+logic [31:0] w_IF_PC;
+logic [31:0] w_IF_NextPC;
+logic [31:0] w_IF_InstructionWord;
+logic w_IF_InstructionAddressMisaligned;
 stage_instruction_fetch stage_IF (
     .i_Clock            (i_Clock),
     .i_Reset            (i_Reset),
 
 
     .i_BranchTarget     (w_BranchTarget),
-    .o_NextPC           (w_IF_ID_NextPC),
-    .o_InstructionWord  (w_IF_ID_InstructionWord),
-    .o_PC               (w_IF_ID_PC),
-    .o_InstructionAddressMisaligned  (w_IF_ID_InstructionAddressMisaligned)
+    .o_NextPC           (w_IF_NextPC),
+    .o_InstructionWord  (w_IF_InstructionWord),
+    .o_PC               (w_IF_PC),
+    .o_InstructionAddressMisaligned  (w_IF_InstructionAddressMisaligned)
 );
 
 
@@ -46,6 +53,7 @@ MEM_Control_t w_ID_MEM_Control;
 WB_Control_t w_ID_WB_Control;
 RegisterIDs_t w_ID_RegisterIDs;
 
+logic [31:0] w_ID_PC;
 logic [31:0] w_ID_rs1Value;
 logic [31:0] w_ID_rs2Value;
 logic [31:0] w_ID_Immediate;
@@ -64,8 +72,9 @@ stage_instruction_decode stage_ID (
     .i_Clock             (i_Clock),
     .i_Reset             (i_Reset),
 
-    .i_NextPC            (w_IF_ID_NextPC),
-    .i_InstructionWord   (w_IF_ID_InstructionWord),
+    .i_PC                (w_IF_PC),
+    .i_NextPC            (w_IF_NextPC),
+    .i_InstructionWord   (w_IF_InstructionWord),
     .i_WritebackSignals  (w_WritebackSignals),
 
     .o_BranchTarget      (w_BranchTarget),
@@ -76,6 +85,7 @@ stage_instruction_decode stage_ID (
     .o_WB_Control        (w_ID_WB_Control),
     .o_RegisterIDs       (w_ID_RegisterIDs),
 
+    .o_PC                (w_ID_PC),
     .o_rs1Value          (w_ID_rs1Value),
     .o_rs2Value          (w_ID_rs2Value),
     .o_Immediate         (w_ID_Immediate),
@@ -100,18 +110,32 @@ logic [31:0] w_WritebackValue = 32'hdeadbeef;
 MEM_Control_t w_EX_MEM_Control;
 WB_Control_t w_EX_WB_Control;
 
+logic [31:0] w_EX_AluOutput;
+logic [31:0] w_EX_rs2Value;
 
 
-
-/*
 logic w_EX_MEM_MemWrite;
 stage_execution stage_EX (
     .i_Clock  (i_Clock),
-    .i_Reset  (i_Reset)
-    .i_MemWrite(w_ID_EX_MemWrite),
-    .o_MemWrite(w_EX_MEM_MemWrite)
+    .i_Reset  (i_Reset),
+
+    .i_rs1Value   (w_ID_rs1Value),
+    .i_rs2Value   (w_ID_rs2Value),
+    .i_Immediate  (w_ID_Immediate),
+
+    .i_PC         (w_ID_PC),
+    .i_RegisterIDs(w_ID_RegisterIDs),
+    .i_EX_Control (w_ID_EX_Control),
+    .i_MEM_Control(w_ID_MEM_Control),
+    .i_WB_Control (w_ID_WB_Control),
+
+    .o_MEM_Control(w_EX_MEM_Control),
+    .o_WB_Control (w_EX_WB_Control),
+
+    .o_AluOutput  (w_EX_AluOutput),
+    .o_rs2Value   (w_EX_rs2Value)
 );
-*/
+
 
 
 
@@ -142,9 +166,6 @@ stage_writeback stage_WB (
 );
 */
 
-
-assign o_PC = w_IF_ID_PC;
-assign o_InstructionWord = w_IF_ID_InstructionWord;
 
 
 endmodule

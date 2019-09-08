@@ -1,9 +1,9 @@
 
 `include "decode_unit.svh"
-`include "alu.svh"
-`include "data_cache.svh"
-
 `include "pipeline_signals.svh"
+`include "alu.svh"
+`include "stage_execution.svh"
+`include "data_cache.svh"
 
 
 module decode_unit (

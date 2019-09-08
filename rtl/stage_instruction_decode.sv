@@ -8,6 +8,7 @@ module stage_instruction_decode (
 
     input [31:0] i_InstructionWord,
 
+    input [31:0] i_PC,
     input [31:0] i_NextPC,
     output [31:0] o_BranchTarget,
 
@@ -33,6 +34,7 @@ module stage_instruction_decode (
     output WB_Control_t o_WB_Control,
     output RegisterIDs_t o_RegisterIDs,
 
+    output [31:0] o_PC,
     output [31:0] o_Immediate,
     output [31:0] o_rs1Value,
     output [31:0] o_rs2Value,
@@ -112,6 +114,7 @@ module stage_instruction_decode (
 
             // NOTE: Register outputs are already updated synchronously
             o_Immediate <= w_Immediate;
+            o_PC <= i_PC;
 
             // TODO: Implement branching
             o_BranchTarget <= i_NextPC;

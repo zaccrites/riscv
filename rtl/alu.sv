@@ -75,8 +75,8 @@ module alu (
         o_LessThan = w_ResultSignedOverflow ^ w_ResultSign;
 
         case (i_AluOp)
-            `ALUOP_SLT  : o_Output = {31'b0, w_LessThan};
-            `ALUOP_SLTU : o_Output = {31'b0, w_LessThanUnsigned};
+            `ALUOP_SLT  : o_Output = {31'b0, o_LessThan};
+            `ALUOP_SLTU : o_Output = {31'b0, o_LessThanUnsigned};
             default     : o_Output = w_Result[31:0];
         endcase
         o_Zero = ~| o_Output;
