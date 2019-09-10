@@ -29,6 +29,7 @@ assign o_InstructionWord = w_IF_InstructionWord;
 logic [31:0] w_IF_PC;
 logic [31:0] w_IF_NextPC;
 logic [31:0] w_IF_InstructionWord;
+logic w_IF_InstructionWordValid;
 logic w_IF_InstructionAddressMisaligned;
 stage_instruction_fetch stage_IF (
     .i_Clock            (i_Clock),
@@ -38,6 +39,7 @@ stage_instruction_fetch stage_IF (
     .i_BranchTarget     (w_BranchTarget),
     .o_NextPC           (w_IF_NextPC),
     .o_InstructionWord  (w_IF_InstructionWord),
+    .o_InstructionWordValid (w_IF_InstructionWordValid),
     .o_PC               (w_IF_PC),
     .o_InstructionAddressMisaligned  (w_IF_InstructionAddressMisaligned)
 );
@@ -60,14 +62,6 @@ logic [31:0] w_ID_Immediate;
 
 
 
-// TODO
-WritebackSignals_t w_WritebackSignals;
-assign w_WritebackSignals.RegWrite = 0;
-assign w_WritebackSignals.Value = 0;
-assign w_WritebackSignals.rd = 0;
-
-
-
 stage_instruction_decode stage_ID (
     .i_Clock             (i_Clock),
     .i_Reset             (i_Reset),
@@ -75,6 +69,7 @@ stage_instruction_decode stage_ID (
     .i_PC                (w_IF_PC),
     .i_NextPC            (w_IF_NextPC),
     .i_InstructionWord   (w_IF_InstructionWord),
+    .i_InstructionWordValid (w_IF_InstructionWordValid),
     .i_WritebackSignals  (w_WritebackSignals),
 
     .o_BranchTarget      (w_BranchTarget),
@@ -96,14 +91,6 @@ stage_instruction_decode stage_ID (
     .o_EnvCall           (o_EnvCall)
 
 );
-
-
-
-// TODO
-logic w_WB_RegWrite = 0;
-logic [4:0] w_WB_rd = 5'b0;
-logic [31:0] w_WritebackValue = 32'hdeadbeef;
-
 
 
 
@@ -170,16 +157,17 @@ stage_memory stage_MEM (
 );
 
 
-/*
-logic w_RegWrite;
-logic w_WritebackValue;
+
+WritebackSignals_t w_WritebackSignals;
+
 stage_writeback stage_WB (
-    .i_WritebackSource(w_MEM_WB_WritebackSrc),
-    .i_RegWrite(w_MEM_WB_RegWrite),
-    .o_RegWrite(w_RegWrite),
-    .o_WritebackValue (w_WritebackValue),
+    .i_WB_Control      (w_MEM_WB_Control),
+    .i_rd     (w_MEM_RegisterIDs.rd),
+    .i_AluOutput       (w_MEM_AluOutput),
+    .i_MemoryValue     (w_MEM_MemoryValue),
+    .o_WritebackSignals(w_WritebackSignals)
 );
-*/
+
 
 
 

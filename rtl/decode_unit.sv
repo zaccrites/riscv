@@ -4,6 +4,7 @@
 `include "alu.svh"
 `include "stage_execution.svh"
 `include "data_cache.svh"
+`include "stage_writeback.svh"
 
 
 module decode_unit (
@@ -22,19 +23,31 @@ module decode_unit (
     output o_IllegalInstruction
 );
 
-    logic [11:0] w_Funct12     = i_InstructionWord[31:20];
+    logic [11:0] w_Funct12;
+    logic [2:0] w_Funct3;
+    logic [4:0] w_Opcode;
+    logic [1:0] w_OpcodeSuffix;
+
+    logic [31:0] w_IType_Immediate;
+    logic [31:0] w_SType_Immediate;
+    logic [31:0] w_BType_Immediate;
+    logic [31:0] w_UType_Immediate;
+    logic [31:0] w_JType_Immediate;
+
+    assign w_Funct12           = i_InstructionWord[31:20];
     assign o_RegisterIDs.rs2   = i_InstructionWord[24:20];
     assign o_RegisterIDs.rs1   = i_InstructionWord[19:15];
-    logic [2:0] w_Funct3       = i_InstructionWord[14:12];
+    assign w_Funct3            = i_InstructionWord[14:12];
     assign o_RegisterIDs.rd    = i_InstructionWord[11:7];
-    logic [4:0] w_Opcode       = i_InstructionWord[6:2];
-    logic [1:0] w_OpcodeSuffix = i_InstructionWord[1:0];
+    assign w_Opcode            = i_InstructionWord[6:2];
+    assign w_OpcodeSuffix      = i_InstructionWord[1:0];
 
-    logic [31:0] w_IType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:20]};
-    logic [31:0] w_SType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:25], i_InstructionWord[11:7]};
-    logic [31:0] w_BType_Immediate = {{20{i_InstructionWord[31]}}, i_InstructionWord[7], i_InstructionWord[30:25], i_InstructionWord[11:8], 1'b0};
-    logic [31:0] w_UType_Immediate = {i_InstructionWord[31:12], 12'b0};
-    logic [31:0] w_JType_Immediate = {{12{i_InstructionWord[31]}}, i_InstructionWord[19:12], i_InstructionWord[20], i_InstructionWord[30:25], i_InstructionWord[24:21], 1'b0};
+    assign w_IType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:20]};
+    assign w_SType_Immediate = {{21{i_InstructionWord[31]}}, i_InstructionWord[30:25], i_InstructionWord[11:7]};
+    assign w_BType_Immediate = {{20{i_InstructionWord[31]}}, i_InstructionWord[7], i_InstructionWord[30:25], i_InstructionWord[11:8], 1'b0};
+    assign w_UType_Immediate = {i_InstructionWord[31:12], 12'b0};
+    assign w_JType_Immediate = {{12{i_InstructionWord[31]}}, i_InstructionWord[19:12], i_InstructionWord[20], i_InstructionWord[30:25], i_InstructionWord[24:21], 1'b0};
+
 
     always_comb begin
         o_IllegalInstruction = w_OpcodeSuffix != 2'b11;

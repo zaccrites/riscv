@@ -78,6 +78,14 @@ public:
         return m_Cpu.o_InstructionWord;
     }
 
+    uint32_t getRegister(uint8_t id) const
+    {
+        // The ID is one-based (since x0 is always zero), but x1 as at
+        // entry 0 in the simulator's register array.
+        if (id == 0) return 0;
+        return m_Cpu.cpu__DOT__stage_ID__DOT__registers__DOT__r_Registers[(id % 32) - 1];
+    }
+
 
     bool loadImage(const char* path)
     {
@@ -103,6 +111,10 @@ public:
                 break;
             }
         }
+
+        // printf("Read %d program instruction words")
+
+
         return true;
     }
 
@@ -133,7 +145,8 @@ int main(int argc, char** argv)
     (void)argv;
 
     Simulator simulator;
-    if ( ! simulator.loadImage("/home/zac/riscv/programs/cprogram1/cprogram1.bin"))
+    // if ( ! simulator.loadImage("/home/zac/riscv/programs/cprogram1/cprogram1.bin"))
+    if ( ! simulator.loadImage("/home/zac/riscv/programs/pipeline1/pipeline1.bin"))
     {
         std::cerr << "Failed to load image!" << std::endl;
         return 1;
@@ -141,17 +154,30 @@ int main(int argc, char** argv)
     simulator.reset();
 
 
+    // NOTE: Branching still not implemented!
+    uint32_t clock = 0;
     while (true)
     {
-        uint32_t pc = simulator.getProgramCounter();
-        printf("pc = %08x \n", pc);
-
-        if (pc > 4 * 10)
+        if (simulator.getProgramCounter() / 4 > 30)
         {
             break;
         }
 
+        printf(
+            "%04d | pc = %08x [word = %08x] | x1 = %08x | x2 = %08x \n",
+            clock,
+            simulator.getProgramCounter(),
+            simulator.getInstructionWord(),
+            simulator.getRegister(1),
+            simulator.getRegister(2)
+        );
+        // printf("============================================ \n");
         simulator.tick();
+        // printf("============================================ \n");
+        // printf("\n\n");
+
+
+        clock += 1;
 
     }
 

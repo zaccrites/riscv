@@ -7,6 +7,6 @@
 *.s
 
 # generated binary image files
-*.bin
 *.hex
-
+*.bin
+*.bin.txt

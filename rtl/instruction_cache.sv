@@ -11,7 +11,7 @@ module instruction_cache (
     input [31:0] i_Address,
     // verilator lint_on UNUSED
 
-    // output o_DataValid,
+    output o_DataValid,
     output [31:0] o_DataOut,
 
     output o_AddressMisaligned
@@ -42,11 +42,11 @@ module instruction_cache (
     always_ff @ (posedge i_Clock) begin
         if (i_Reset) begin
             // TODO: Invalidate cache entries
-            // o_DataValid <= 0;
+            o_DataValid <= 0;
             o_DataOut <= 32'h00000000;
         end
         else begin
-            // o_DataValid <= ! o_AddressMisaligned;
+            o_DataValid <= ! o_AddressMisaligned;
             o_DataOut <= r_RAM[w_WordAddress];
         end
     end

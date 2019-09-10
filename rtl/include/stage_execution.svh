@@ -3,9 +3,6 @@
 `define STAGE_EXECUTION_SVH
 
 
-`define WBSRC_ALU   1'h0
-`define WBSRC_MEM   1'h1
-
 `define ALUSRC1_RS1      2'h0
 `define ALUSRC1_PC       2'h1
 `define ALUSRC1_CONST_0  2'h2

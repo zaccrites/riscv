@@ -32,8 +32,11 @@ module data_cache (
 // to allow byte and halfword reads and writes.
 logic [7:0] r_RAM [32 * 1024 / 4] [3:0];
 
-logic [12:0] w_WordAddress = i_Address[14:2];
-logic [31:0] w_MemoryWord = {
+logic [12:0] w_WordAddress;
+assign w_WordAddress = i_Address[14:2];
+
+logic [31:0] w_MemoryWord;
+assign w_MemoryWord = {
     r_RAM[w_WordAddress][3],
     r_RAM[w_WordAddress][2],
     r_RAM[w_WordAddress][1],
@@ -49,7 +52,6 @@ logic w_MisalignedAccess;
 always_comb begin
     w_WriteData = i_DataIn;
     w_ReadData = w_MemoryWord;
-    $display("MEMORY: Reading word %08x from address %08x", w_ReadData, {16'h0000, w_WordAddress, 2'b00});
 
     o_MisalignedAccess = 0;
     w_ReadData = 32'hdeadbeef;
@@ -140,10 +142,11 @@ always_ff @ (posedge i_Clock) begin
         if (w_WriteEnable[1]) r_RAM[w_WordAddress][1] <= w_WriteData[15:8];
         if (w_WriteEnable[0]) r_RAM[w_WordAddress][0] <= w_WriteData[7:0];
 
-        // if (i_ReadEnable) begin
-            // TODO: Synchronous read
-        // end
-        o_DataOut <= w_ReadData;
+        // TODO: Only raise exceptions if ReadEnable is asserted
+        if (i_ReadEnable) begin
+            $display("MEMORY: Reading word %08x from address %08x", w_ReadData, {16'h0000, w_WordAddress, 2'b00});
+            o_DataOut <= w_ReadData;
+        end
     end
 end
 

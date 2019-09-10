@@ -19,29 +19,20 @@ LDFLAGS= \
 LDLIBS= -lgcc
 
 
-all: cprogram1.bin
+all: pipeline1.bin
 
 
-cprogram1.bin: cprogram1.elf
+pipeline1.bin: pipeline1.elf
 	$(OBJCOPY) -O binary $^ $@
 	xxd -e $@ > $@.txt
 
 
-cprogram1.elf: startup.o runtime.o main.o utils.o
+pipeline1.elf: pipeline1.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-	$(OBJDUMP) -d $@ > cprogram1.s
+	$(OBJDUMP) -d $@ > pipeline1.s
 
 
-main.o: main.c runtime.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-runtime.o: runtime.c runtime.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-startup.o: startup.asm
-	$(AS) $(ASFLAGS) $< -o $@
-
-utils.o: utils.asm
+pipeline1.o: pipeline1.asm
 	$(AS) $(ASFLAGS) $< -o $@
 
 

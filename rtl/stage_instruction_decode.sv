@@ -7,6 +7,7 @@ module stage_instruction_decode (
     input i_Reset,
 
     input [31:0] i_InstructionWord,
+    input i_InstructionWordValid,
 
     input [31:0] i_PC,
     input [31:0] i_NextPC,
@@ -100,8 +101,25 @@ module stage_instruction_decode (
         .o_DataOut2      (o_rs2Value)
     );
 
+    always_comb begin
+        // TODO: Implement branching
+        o_BranchTarget = i_NextPC;
+
+        // TODO: Implement exception trapping
+        // o_EnvBreak = w_EnvBreak;
+        // o_IllegalInstruction = w_IllegalInstruction
+        o_EnvCall = w_EnvCall;
+
+    end
+
+
+    // TODO: Implement hazard detection
+    logic w_Stall = 0;
+
+
     always_ff @ (posedge i_Clock) begin
-        if (i_Reset) begin
+        // $display("The word is %08x  (valid? = %d)", i_InstructionWord, i_InstructionWordValid);
+        if (i_Reset || w_Stall || ! i_InstructionWordValid) begin
             o_MEM_Control.MemRead <= 0;
             o_MEM_Control.MemWrite <= 0;
             o_WB_Control.RegWrite <= 0;
@@ -115,15 +133,6 @@ module stage_instruction_decode (
             // NOTE: Register outputs are already updated synchronously
             o_Immediate <= w_Immediate;
             o_PC <= i_PC;
-
-            // TODO: Implement branching
-            o_BranchTarget <= i_NextPC;
-
-            // TODO: Implement exception trapping
-            // o_EnvBreak <= w_EnvBreak;
-            // o_IllegalInstruction <= w_IllegalInstruction
-            o_EnvCall <= w_EnvCall;
-
         end
     end
 

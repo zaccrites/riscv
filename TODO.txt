@@ -18,3 +18,6 @@ Backlog of unfinished features or known issues.
   https://www.reddit.com/r/FPGA/comments/afv2o3/create_a_vivado_project_and_generate_bitstream/
   https://www.reddit.com/r/FPGA/comments/aknl8r/vivado_nonproject_mode_releasing_vivados_true/
   https://www.reddit.com/r/FPGA/comments/9gtxow/impress_your_new_boss_through_fpga_design_flow/
+
+
+- Replace `defines with proper packed enumerations

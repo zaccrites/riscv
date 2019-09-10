@@ -16,7 +16,7 @@ module register_file(
     // TODO: Make sure the Xilinx tools infer a RAM with WRITE_FIRST
     always_ff @ (posedge i_Clock) begin
         if (i_WriteEnable) begin
-            if (i_RegDest == 5'b0)
+            if (i_RegDest != 5'b0)
                 r_Registers[i_RegDest] <= i_DataIn;
 
             if (i_RegSource1 == 5'b0)

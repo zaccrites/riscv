@@ -16,7 +16,7 @@ module stage_instruction_fetch (
     output [31:0] o_PC,
     output [31:0] o_NextPC,
     output [31:0] o_InstructionWord,
-    // output IF_Output_Signals_t o_
+    output o_InstructionWordValid,
 
     // TODO: Exceptions
     output o_InstructionAddressMisaligned
@@ -31,17 +31,25 @@ module stage_instruction_fetch (
         .o_NextPC       (w_NextPC)
     );
 
+    logic w_InstructionWordValid;
     instruction_cache icache (
         .i_Clock            (i_Clock),
         .i_Reset            (i_Reset),
         .i_Address          (w_PC),
         .o_DataOut          (o_InstructionWord),
+        .o_DataValid        (w_InstructionWordValid),
         .o_AddressMisaligned(o_InstructionAddressMisaligned)
     );
 
     always_ff @ (posedge i_Clock) begin
-        o_PC <= w_PC;
-        o_NextPC <= w_NextPC;
+        if (i_Reset) begin
+            o_InstructionWordValid <= 0;
+        end
+        else begin
+            o_PC <= w_PC;
+            o_NextPC <= w_NextPC;
+            o_InstructionWordValid <= 1 || w_InstructionWordValid;
+        end
     end
 
 endmodule
