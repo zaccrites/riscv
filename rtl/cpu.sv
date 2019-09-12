@@ -117,6 +117,23 @@ stage_execution stage_EX (
     .i_MEM_Control(w_ID_MEM_Control),
     .i_WB_Control (w_ID_WB_Control),
 
+
+    .i_ForwardingSignals('{
+        // These use the values from a stage earlier because they need to
+        // be the signals actually used during the stage, rather than
+        // the ones output as pipeline registers by that stage.
+        //
+        // TODO: Rename these pipeline register signals for reasons such as these.
+        MEM_rd: w_EX_RegisterIDs.rd,
+        MEM_RegWrite: w_EX_WB_Control.RegWrite,
+        MEM_Value: w_EX_AluOutput,
+
+        WB_rd: w_MEM_RegisterIDs.rd,
+        WB_RegWrite: w_MEM_WB_Control.RegWrite,
+        WB_Value: w_WritebackSignals.Value
+    }),
+
+
     .o_MEM_Control(w_EX_MEM_Control),
     .o_WB_Control (w_EX_WB_Control),
     .o_RegisterIDs (w_EX_RegisterIDs),

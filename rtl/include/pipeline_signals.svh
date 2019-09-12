@@ -1,16 +1,15 @@
 
-// TODO: Split this up?
+// TODO: Rename this file
+// TODO: Split this up
+// TODO: Use enums instead of `defines
+
 
 `ifndef PIPELINE_SIGNALS_SVH
 `define PIPELINE_SIGNALS_SVH
 
-// TODO: Use enums instead of `defines for these signals?
 
 
-// typedef struct packed
-// {
-//     logic
-// } IF_Output_Signals_t;
+
 
 
 typedef struct packed
@@ -37,13 +36,6 @@ typedef struct packed
 } MEM_Control_t;
 
 
-// typedef struct packed
-// {
-//     ID_IF_Control_t ID_IF_Control;
-//     EX_Control_t EX_Control;
-//     MEM_Control_t MEM_Control;
-// } ID_Output_Signals;
-
 
 
 
@@ -55,11 +47,19 @@ typedef struct packed
 
 
 
+// TODO: Do more of this.
+// Does it hurt parameterization? I suppose the 31 can be `defined
+typedef logic [31:0] DataWord_t;
+typedef logic [31:0] Address_t;
+
+typedef logic [4:0] RegisterID_t;
+
+
 typedef struct packed
 {
-    logic [4:0] rs1;
-    logic [4:0] rs2;
-    logic [4:0] rd;
+    RegisterID_t rs1;
+    RegisterID_t rs2;
+    RegisterID_t rd;
 } RegisterIDs_t;
 
 
@@ -68,38 +68,22 @@ typedef struct packed
 {
     logic RegWrite;
     logic [31:0] Value;
-    logic [4:0] rd;
+    RegisterID_t rd;
 } WritebackSignals_t;
 
 
 
-// typedef struct packed
-// {
-//     logic [31:0] PC;
-//     logic [31:0] NextPC;
-//     logic [31:0] InstructionWord;
-// } IF_Output_Signals_t;
+// TODO: Move to forwarding_unit.svh?
+typedef struct packed
+{
+    logic MEM_RegWrite;
+    RegisterID_t MEM_rd;
+    logic [31:0] MEM_Value;
 
-
-// typedef struct packed
-// {
-//     logic [31:0] BranchTarget;
-// } IF_Feedback_Signals_t;
-
-
-
-
-
-// typedef struct packed
-// {
-
-// } IF_ID_Pipeline_Signals_t;
-
-
-// typedef struct packed
-// {
-
-// } ID_EX_Pipeline_Signals_t;
+    logic WB_RegWrite;
+    RegisterID_t WB_rd;
+    logic [31:0] WB_Value;
+} ForwardingSignals_t;
 
 
 

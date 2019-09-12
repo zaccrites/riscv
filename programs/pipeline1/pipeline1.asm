@@ -9,49 +9,116 @@ _start:
 
 
     # Doesn't work because forwarding isn't implemented!
-    #addi x1, x0, 1
-    #add  x2, x1, x1
-    #add  x2, x2, x1
-    #add  x2, x2, x1
-    #add  x2, x2, x1
-
-    # Inserting NOPs allows the calculation to work.
     addi x1, x0, 1
-    nop
-    nop
-    add  x2, x1, x0
-    nop
-    nop
-    add  x2, x2, x1
-    nop
-    nop
-    add  x2, x2, x1
-    nop
-    nop
-    add  x2, x2, x1
-    nop
-    nop
-    ######
+    addi x2, x0, 1
+    add  x1, x1, x1
     add  x2, x2, x2
-    nop
-    nop
+    add  x1, x1, x1
     add  x2, x2, x2
-    nop
-    nop
+    add  x1, x1, x1
     add  x2, x2, x2
-    nop
-    nop
+    add  x1, x1, x1
     add  x2, x2, x2
-    nop
-    nop
+    add  x1, x1, x1
     add  x2, x2, x2
-    nop
-    nop
-    add  x2, x2, x2
-    nop
-    nop
+
+    # # Inserting NOPs allows the calculation to work.
+    # addi x1, x0, 1
+    # # nop
+    # # nop
+    # add  x2, x1, x0
+    # # nop
+    # # nop
+    # add  x2, x2, x1
+    # # nop
+    # # nop
+    # add  x2, x2, x1
+    # # nop
+    # # nop
+    # add  x2, x2, x1
+    # # nop
+    # # nop
+    # ######
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # add  x2, x2, x2
+    # # nop
+    # # nop
+    # slli x2, x2, 4
+    # # nop
+    # # nop
+    # slli x2, x2, 4
+    # # nop
+    # # nop
+    # slli x2, x2, 4
+    # # nop
+    # # nop
+    # slli x2, x2, 4
+    # # nop
+    # # nop
 
 
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
     nop
     nop
     nop

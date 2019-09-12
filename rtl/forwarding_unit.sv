@@ -1,45 +1,61 @@
 
+`include "pipeline_signals.svh"
+
+
 module forwarding_unit (
-    input i_rs1,
-    input i_rs2,
-    input i_MEM_rd,
-    input i_WB_rd,
+    input RegisterID_t i_rs1,
+    input RegisterID_t i_rs2,
+    input ForwardingSignals_t i_ForwardingSignals,
 
-    input i_MEM_RegWrite,
-    input i_WB_RegWrite,
-
-    // output o_ForwardRs1FromMEM,
-    // output o_ForwardRs1FromWB,
-    // output o_ForwardRs2FromMEM,
-    // output o_ForwardRs2FromWB
-
-
-    input [31:0] i_MEM_rs1Value,
-    input [31:0] i_MEM_rs2Value,
-    input [31:0] i_WB_rs1Value,
-    input [31:0] i_WB_rs2Value,
-
+    output o_ForwardRs1,
+    output o_ForwardRs2,
 
     output [31:0] o_ForwardedRs1Value,
     output [31:0] o_ForwardedRs2Value
 
 );
 
-
-    // TODO: I *may* have to rename some signals, since what I'm
-    // calling e.g. "MEM_RegisterIDs" is actually the synchronously
-    // set pipeline register output from the MEM stage, rather than
-    // the one acctually "used" in the MEM stage.
-
-
+    // TODO: Optimize this? Could be using a lot of LUTs
     always_comb begin
 
-        // The synchronous data memory may complicate forwarding.
-        // It may have to techincally come from the WB stage,
-        // but still one clock cycle before the register is actually
-        // written.
+        if (i_ForwardingSignals.MEM_RegWrite &&
+            i_ForwardingSignals.MEM_rd == i_rs1 &&
+            i_ForwardingSignals.MEM_rd != 0)
+        begin
+            o_ForwardedRs1Value = i_ForwardingSignals.MEM_Value;
+            o_ForwardRs1 = 1;
+        end
+        else if (i_ForwardingSignals.WB_RegWrite &&
+                 i_ForwardingSignals.WB_rd == i_rs1 &&
+                 i_ForwardingSignals.WB_rd != 0)
+        begin
+            o_ForwardedRs1Value = i_ForwardingSignals.WB_Value;
+            o_ForwardRs1 = 1;
+        end
+        else begin
+            o_ForwardedRs1Value = 32'hcafebabe;
+            o_ForwardRs1 = 0;
+        end
+
+        if (i_ForwardingSignals.MEM_RegWrite &&
+            i_ForwardingSignals.MEM_rd == i_rs2 &&
+            i_ForwardingSignals.MEM_rd != 0)
+        begin
+            o_ForwardedRs2Value = i_ForwardingSignals.MEM_Value;
+            o_ForwardRs2 = 1;
+        end
+        else if (i_ForwardingSignals.WB_RegWrite &&
+                 i_ForwardingSignals.WB_rd == i_rs2 &&
+                 i_ForwardingSignals.WB_rd != 0)
+        begin
+            o_ForwardedRs2Value = i_ForwardingSignals.WB_Value;
+            o_ForwardRs2 = 1;
+        end
+        else begin
+            o_ForwardedRs2Value = 32'hcafebabe;
+            o_ForwardRs2 = 0;
+        end
 
     end
-
 
 endmodule

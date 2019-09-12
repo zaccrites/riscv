@@ -158,7 +158,7 @@ int main(int argc, char** argv)
     uint32_t clock = 0;
     while (true)
     {
-        if (simulator.getProgramCounter() / 4 > 30)
+        if (simulator.getProgramCounter() / 4 > 50)
         {
             break;
         }

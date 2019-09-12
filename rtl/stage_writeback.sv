@@ -5,7 +5,7 @@
 
 module stage_writeback (
     input WB_Control_t i_WB_Control,
-    input [4:0] i_rd,
+    input RegisterID_t i_rd,
 
     input [31:0] i_AluOutput,
     input [31:0] i_MemoryValue,
