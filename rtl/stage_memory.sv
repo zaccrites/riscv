@@ -8,7 +8,7 @@ module stage_memory (
 
     input MEM_Control_t i_MEM_Control,
     input WB_Control_t i_WB_Control,
-    input RegisterIDs_t i_RegisterIDs,
+    input RegisterID_t i_rd,
 
     output WB_Control_t o_WB_Control,
 
@@ -17,7 +17,7 @@ module stage_memory (
 
     output [31:0] o_AluOutput,
     output [31:0] o_MemoryValue,
-    output RegisterIDs_t o_RegisterIDs,
+    output RegisterID_t o_rd,
 
     // TODO
     logic o_MisalignedAccess
@@ -44,7 +44,7 @@ module stage_memory (
         end
         else begin
             o_WB_Control <= i_WB_Control;
-            o_RegisterIDs <= i_RegisterIDs;
+            o_rd <= i_rd;
 
             // NOTE: Memory reads are already synchronous
             o_AluOutput <= i_AluOutput;

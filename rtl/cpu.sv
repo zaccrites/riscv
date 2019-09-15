@@ -22,15 +22,16 @@ assign o_InstructionWord = w_IF_InstructionWord;
 
 
 
-// TODO: Remove this once all stages are added
-// verilator lint_off UNUSED
-
-
 logic [31:0] w_IF_PC;
 logic [31:0] w_IF_NextPC;
 logic [31:0] w_IF_InstructionWord;
 logic w_IF_InstructionWordValid;
+
+// TODO: Exceptions
+// verilator lint_off UNUSED
 logic w_IF_InstructionAddressMisaligned;
+// verilator lint_on UNUSED
+
 stage_instruction_fetch stage_IF (
     .i_Clock            (i_Clock),
     .i_Reset            (i_Reset),
@@ -49,7 +50,11 @@ stage_instruction_fetch stage_IF (
 logic [31:0] w_BranchTarget;
 
 
+// TODO: Use this for branching
+// verilator lint_off UNUSED
 ID_IF_Control_t w_ID_IF_Control;     // TODO: could use better name
+// verilator lint_on UNUSED
+
 EX_Control_t w_ID_EX_Control;
 MEM_Control_t w_ID_MEM_Control;
 WB_Control_t w_ID_WB_Control;
@@ -96,13 +101,12 @@ stage_instruction_decode stage_ID (
 
 MEM_Control_t w_EX_MEM_Control;
 WB_Control_t w_EX_WB_Control;
-RegisterIDs_t w_EX_RegisterIDs;
+RegisterID_t w_EX_rd;
 
 logic [31:0] w_EX_AluOutput;
 logic [31:0] w_EX_rs2Value;
 
 
-logic w_EX_MEM_MemWrite;
 stage_execution stage_EX (
     .i_Clock  (i_Clock),
     .i_Reset  (i_Reset),
@@ -124,11 +128,12 @@ stage_execution stage_EX (
         // the ones output as pipeline registers by that stage.
         //
         // TODO: Rename these pipeline register signals for reasons such as these.
-        MEM_rd: w_EX_RegisterIDs.rd,
+        MEM_rd: w_EX_rd,
         MEM_RegWrite: w_EX_WB_Control.RegWrite,
         MEM_Value: w_EX_AluOutput,
 
-        WB_rd: w_MEM_RegisterIDs.rd,
+        // WB_rd: w_MEM_RegisterIDs.rd,
+        WB_rd: w_MEM_rd,
         WB_RegWrite: w_MEM_WB_Control.RegWrite,
         WB_Value: w_WritebackSignals.Value
     }),
@@ -136,7 +141,7 @@ stage_execution stage_EX (
 
     .o_MEM_Control(w_EX_MEM_Control),
     .o_WB_Control (w_EX_WB_Control),
-    .o_RegisterIDs (w_EX_RegisterIDs),
+    .o_rd (w_EX_rd),
 
     .o_AluOutput  (w_EX_AluOutput),
     .o_rs2Value   (w_EX_rs2Value)
@@ -145,10 +150,14 @@ stage_execution stage_EX (
 
 
 
+// TODO: Exceptions
+// verilator lint_off UNUSED
 logic w_MEM_DataAddressMisaligned;
+// verilator lint_on UNUSED
 
 WB_Control_t w_MEM_WB_Control;
-RegisterIDs_t w_MEM_RegisterIDs;
+
+RegisterID_t w_MEM_rd;
 
 logic [31:0] w_MEM_AluOutput;
 logic [31:0] w_MEM_MemoryValue;
@@ -166,8 +175,8 @@ stage_memory stage_MEM (
     .i_WB_Control (w_EX_WB_Control),
 
     .i_rs2Value   (w_EX_rs2Value),
-    .i_RegisterIDs(w_EX_RegisterIDs),
-    .o_RegisterIDs     (w_MEM_RegisterIDs),
+    .i_rd     (w_EX_rd),
+    .o_rd     (w_MEM_rd),
 
     .o_WB_Control (w_MEM_WB_Control),
     .o_MisalignedAccess(w_MEM_DataAddressMisaligned)
@@ -179,7 +188,7 @@ WritebackSignals_t w_WritebackSignals;
 
 stage_writeback stage_WB (
     .i_WB_Control      (w_MEM_WB_Control),
-    .i_rd     (w_MEM_RegisterIDs.rd),
+    .i_rd              (w_MEM_rd),
     .i_AluOutput       (w_MEM_AluOutput),
     .i_MemoryValue     (w_MEM_MemoryValue),
     .o_WritebackSignals(w_WritebackSignals)
