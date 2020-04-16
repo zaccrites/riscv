@@ -17,7 +17,8 @@ typedef struct packed
     logic Jump;
     logic Branch;
     logic JALR;                       // Is this the only "ID" control signal?
-} ID_IF_Control_t;
+} IF_Control_t;
+
 
 typedef struct packed
 {
@@ -34,9 +35,6 @@ typedef struct packed
     logic MemRead;
     logic MemWrite;
 } MEM_Control_t;
-
-
-
 
 
 typedef struct packed

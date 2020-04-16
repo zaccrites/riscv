@@ -75,7 +75,7 @@ module stage_instruction_decode (
         .i_InstructionWord      (i_InstructionWord),
 
 
-        .o_ID_IF_Control     (o_ID_IF_Control),
+        .o_IF_Control        (o_IF_Control),
         .o_EX_Control        (w_EX_Control),
         .o_MEM_Control       (w_MEM_Control),
         .o_WB_Control        (w_WB_Control),

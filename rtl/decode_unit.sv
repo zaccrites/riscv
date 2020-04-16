@@ -10,12 +10,15 @@
 module decode_unit (
     input [31:0] i_InstructionWord,
 
-    output ID_IF_Control_t o_ID_IF_Control,
     output EX_Control_t o_EX_Control,
     output MEM_Control_t o_MEM_Control,
     output WB_Control_t o_WB_Control,
     output RegisterIDs_t o_RegisterIDs,
     output [31:0] o_Immediate,
+
+    output o_Branch
+    output o_Jump,
+    output o_JALR,
 
     output o_EnvCall,
     output o_EnvBreak,
@@ -54,9 +57,9 @@ module decode_unit (
 
         // Default values
         //
-        o_ID_IF_Control.Jump = 0;
-        o_ID_IF_Control.Branch = 0;
-        o_ID_IF_Control.JALR = 0;
+        o_Jump = 0;
+        o_Branch = 0;
+        o_JALR = 0;
         //
         o_EX_Control.AluSrc1 = `ALUSRC1_RS1;
         o_EX_Control.AluSrc2 = `ALUSRC2_RS2;
@@ -123,14 +126,14 @@ module decode_unit (
             end
 
             `OPCODE_BRANCH : begin
-                o_ID_IF_Control.Branch = 1;
+                o_Branch = 1;
                 o_EX_Control.AluOp = `ALUOP_ADD;
                 o_EX_Control.AluOpAlt = `ALUOP_ALT_SUB;
                 o_Immediate = w_BType_Immediate;
             end
 
             `OPCODE_JAL : begin
-                o_ID_IF_Control.Jump = 1;
+                o_Jump = 1;
                 o_WB_Control.RegWrite = 1;
                 o_EX_Control.AluOp = `ALUOP_ADD;
                 o_EX_Control.AluOpAlt = `ALUOP_ALT_ADD;
@@ -140,14 +143,14 @@ module decode_unit (
             end
 
             `OPCODE_JALR : begin
-                o_ID_IF_Control.Jump = 1;
+                o_Jump = 1;
                 o_WB_Control.RegWrite = 1;
                 o_EX_Control.AluOp = `ALUOP_ADD;
                 o_EX_Control.AluOpAlt = `ALUOP_ALT_ADD;
                 o_EX_Control.AluSrc1 = `ALUSRC1_PC;
                 o_EX_Control.AluSrc2 = `ALUSRC2_CONST_4;
                 o_Immediate = w_JType_Immediate;
-                o_ID_IF_Control.JALR = 1;
+                o_JALR = 1;
             end
 
             `OPCODE_SYSTEM : begin

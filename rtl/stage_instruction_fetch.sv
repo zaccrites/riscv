@@ -2,6 +2,9 @@
 `include "pipeline_signals.svh"
 
 
+// TODO: Implement branch target buffer
+
+
 module stage_instruction_fetch (
     input i_Clock,
     input i_Reset,
